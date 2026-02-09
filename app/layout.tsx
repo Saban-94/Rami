@@ -1,7 +1,7 @@
 import "./globals.css";
 import { Heebo } from "next/font/google";
 import { ThemeProvider } from "next-themes";
-import Navigation from "@/components/Navigation";
+import Navigation from "../components/Navigation";
 
 const heebo = Heebo({ subsets: ["hebrew"], variable: "--font-hebrew" });
 
