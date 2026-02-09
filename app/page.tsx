@@ -1,11 +1,9 @@
 "use client";
 
-import React from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, Rocket, ShieldCheck, Zap, Laptop, Tablet, Smartphone } from "lucide-react";
-import StatsGrid from "@/components/StatsGrid";
-import PlannerDemo from "@/components/PlannerDemo";
-import ProjectsShowcase from "@/components/ProjectsShowcase";
+import Navigation from "../components/Navigation";
+import StatsGrid from "../components/StatsGrid";
+import PlannerDemo from "../components/PlannerDemo";
+import ProjectsShowcase from "../components/ProjectsShowcase";
 
 export default function HomePage() {
   return (
