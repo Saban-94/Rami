@@ -1,6 +1,8 @@
 "use client";
 
-import Navigation from "../components/Navigation";
+import React from "react";
+import { motion } from "framer-motion";
+import { ArrowLeft, Rocket, ShieldCheck, Zap, Laptop, Tablet, Smartphone } from "lucide-react";
 import StatsGrid from "../components/StatsGrid";
 import PlannerDemo from "../components/PlannerDemo";
 import ProjectsShowcase from "../components/ProjectsShowcase";
@@ -11,13 +13,14 @@ export default function HomePage() {
       
       {/* --- HERO SECTION --- */}
       <section className="relative pt-20 pb-16 px-6 overflow-hidden">
-        {/* אפקטי תאורה ברקע - WOW ויזואלי */}
+        {/* אפקטי תאורה יוקרתיים ברקע */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-gradient-to-b from-cyan-500/10 to-transparent blur-3xl opacity-50" />
         
         <div className="max-w-6xl mx-auto relative z-10 text-center md:text-right flex flex-col md:flex-row items-center justify-between gap-12">
           <motion.div 
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
             className="flex-1"
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-xs font-bold mb-6">
@@ -46,20 +49,21 @@ export default function HomePage() {
             </div>
           </motion.div>
 
-          {/* ויזואל רספונסיבי - WOW */}
+          {/* ויזואל רספונסיבי עם אפקט זכוכית */}
           <motion.div 
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
             className="flex-1 relative"
           >
             <div className="relative z-10 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-md border border-white/20 p-2 rounded-[3rem] shadow-2xl">
                <img 
-                 src="https://github.com/ramims2026-bit.png" 
+                 src="https://github.com/Saban-94.png" 
                  alt="Rami" 
                  className="rounded-[2.5rem] w-full max-w-[400px] mx-auto grayscale hover:grayscale-0 transition-all duration-700"
                />
             </div>
-            {/* צפיפות מכשירים - אינדיקציה ל-PWA */}
+            
             <div className="absolute -bottom-6 -right-6 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-xl border border-slate-100 dark:border-white/10 flex gap-4">
               <Smartphone size={20} className="text-cyan-500" />
               <Tablet size={20} className="text-blue-500" />
@@ -73,19 +77,23 @@ export default function HomePage() {
       <div className="max-w-6xl mx-auto px-6 space-y-24">
         
         {/* סטטיסטיקות יוקרתיות */}
-        <section>
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
           <StatsGrid />
-        </section>
+        </motion.section>
 
-        {/* פרויקטים - ה-WOW הגדול */}
+        {/* פרויקטים - ה-WOW הגדול (ח. סבן) */}
         <section id="projects" className="scroll-mt-24">
           <ProjectsShowcase />
         </section>
 
-        {/* פאנל שליטה - דאטה חי */}
+        {/* פאנל שליטה - דאטה חי / דמה */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-12 pb-12">
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold flex items-center gap-3 italic">
+            <h2 className="text-3xl font-bold flex items-center gap-3 italic dark:text-white">
               <Zap className="text-yellow-400 fill-yellow-400" />
               זמן אמת
             </h2>
@@ -93,13 +101,13 @@ export default function HomePage() {
               המערכות שלנו עובדות מסביב לשעון. כאן ניתן לראות סנכרון חי של משימות ודוחות מכלל הפלטפורמות הארגוניות.
             </p>
             <div className="p-8 rounded-[2rem] bg-gradient-to-br from-cyan-500/10 to-transparent border border-cyan-500/20">
-              <h4 className="font-bold text-lg mb-2">סטטוס סנכרון</h4>
+              <h4 className="font-bold text-lg mb-2 dark:text-white">סטטוס סנכרון</h4>
               <div className="flex items-center gap-4 text-sm text-green-500 font-bold">
                 <span className="relative flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
                 </span>
-                חיבור פעיל ל-Microsoft Graph
+                חיבור פעיל ל-Microsoft Graph API
               </div>
             </div>
           </div>
