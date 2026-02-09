@@ -1,11 +1,14 @@
 import "./globals.css";
-import { Inter, Heebo } from "next/font/google";
+import { Heebo } from "next/font/google";
+import { ThemeProvider } from "next-themes";
+import Navigation from "@/components/Navigation";
 
 const heebo = Heebo({ subsets: ["hebrew"], variable: "--font-hebrew" });
 
 export const metadata = {
-  title: "רמי מסארוה | IT & Automation Expert",
-  description: "פורטפוליו ופתרונות אוטומציה",
+  title: "Rami Systems | IT & Automation",
+  description: "מומחה IT ואוטומציה בין Google Workspace ל-Microsoft 365",
+  manifest: "/manifest.json", // חיבור ה-PWA
 };
 
 export default function RootLayout({
@@ -14,9 +17,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="he" dir="rtl">
-      <body className={`${heebo.variable} font-hebrew bg-slate-50 text-slate-900`}>
-        {children}
+    <html lang="he" dir="rtl" suppressHydrationWarning>
+      <body className={`${heebo.variable} font-hebrew bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white transition-colors duration-300`}>
+        <ThemeProvider attribute="class" defaultTheme="dark">
+          <Navigation />
+          <div className="pt-16">
+            {children}
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );
