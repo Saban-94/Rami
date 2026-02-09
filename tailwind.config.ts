@@ -1,22 +1,20 @@
+// tailwind.config.ts
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
+  darkMode: ["class"], // חשוב לבורר העיצוב
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        brand: {
-          dark: "#0F172A",
-          primary: "#1E3A8A",
-          secondary: "#14B8A6",
-        }
+        fluentGlass: "rgba(255, 255, 255, 0.1)",
+        fluentGlassDark: "rgba(15, 23, 42, 0.7)",
       },
+      backdropBlur: {
+        xs: "2px",
+      }
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate"), require("tailwindcss-rtl")],
 };
 export default config;
