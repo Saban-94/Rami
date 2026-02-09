@@ -1,4 +1,4 @@
-import "./globals.css";
+import "../styles/globals.css";
 import { Inter, Heebo } from "next/font/google";
 
 const heebo = Heebo({ subsets: ["hebrew"], variable: "--font-hebrew" });
