@@ -13,12 +13,41 @@ import ProjectsShowcase from "../components/ProjectsShowcase";
 import ServicesSection from "../components/ServicesSection";
 import ContactSection from "../components/ContactSection";
 
+// לוגואים למערכות שרמי מתמחה בהן
+const techLogos = [
+  { name: "Google", src: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
+  { name: "Microsoft", src: "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" },
+  { name: "Gemini AI", src: "https://www.gstatic.com/lamda/images/gemini-sparkle_360_08d13264c7810777326090e5015b3e20.svg" },
+  { name: "ChatGPT", src: "https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" },
+  { name: "Copilot", src: "https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_Copilot_icon.svg" },
+  { name: "Firebase", src: "https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" },
+  { name: "Vercel", src: "https://www.svgrepo.com/show/342111/vercel.svg" },
+  { name: "Google Sheets", src: "https://upload.wikimedia.org/wikipedia/commons/3/30/Google_Sheets_logo_%282014-2020%29.svg" },
+  { name: "Apps Script", src: "https://upload.wikimedia.org/wikipedia/commons/d/da/Google_Apps_Script_logo.svg" },
+  { name: "WhatsApp", src: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" },
+  { name: "Azure", src: "https://upload.wikimedia.org/wikipedia/commons/a/a8/Microsoft_Azure_Logo.svg" },
+  { name: "Power Automate", src: "https://upload.wikimedia.org/wikipedia/commons/d/d4/Microsoft_Power_Automate_Logo.svg" },
+];
+
 export default function HomePage() {
-  // פונקציה לשליחה מהירה לוואטסאפ
   const openWhatsApp = () => {
     const phoneNumber = "972508861080";
     const message = encodeURIComponent("שלום רמי, אני מעוניין בשירותי האוטומציה והפיתוח שלך. אשמח שנחזור אלי.");
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
+  };
+
+  const tickerVariants = {
+    animate: {
+      x: ["0%", "-100%"],
+      transition: {
+        x: {
+          repeat: Infinity,
+          repeatType: "loop",
+          duration: 30, // מהירות הסרט הנע
+          ease: "linear",
+        },
+      },
+    },
   };
 
   return (
@@ -72,6 +101,27 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* --- LOGO TICKER: סרט הלוגואים הנע --- */}
+      <div className="overflow-hidden whitespace-nowrap py-6 bg-white dark:bg-slate-950 border-y border-white/10 relative z-20">
+        <motion.div 
+          className="inline-block"
+          variants={tickerVariants}
+          initial="animate" // Start the animation immediately
+          animate="animate"
+        >
+          {/* כדי שהלוגואים יחזרו על עצמם וייצרו רצף חלק */}
+          {[...techLogos, ...techLogos].map((logo, index) => (
+            <img 
+              key={index} 
+              src={logo.src} 
+              alt={logo.name} 
+              className="h-10 mx-8 inline-block opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300"
+              style={{ maxHeight: '40px', width: 'auto' }} // Ensure consistent size
+            />
+          ))}
+        </motion.div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-6 space-y-32">
         <StatsGrid />
         <ServicesSection />
@@ -82,9 +132,9 @@ export default function HomePage() {
         </section>
 
         {/* פאנל בקרה ומשימות דמה */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center text-right">
           <PlannerDemo />
-          <div className="space-y-6 text-right">
+          <div className="space-y-6">
             <h2 className="text-4xl font-black dark:text-white leading-tight">
               שליטה מרכזית <br />
               <span className="text-cyan-500">בזמן אמת</span>
@@ -95,13 +145,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* --- טופס צור קשר מובנה --- */}
+        {/* טופס צור קשר מובנה */}
         <section id="contact" className="scroll-mt-28 pb-20">
           <ContactSection />
         </section>
       </div>
 
-      {/* --- FLOATING WHATSAPP BUTTON --- */}
+      {/* FLOATING WHATSAPP BUTTON */}
       <motion.div 
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
