@@ -1,13 +1,7 @@
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
-import { 
-  Globe, 
-  Cpu, 
-  Zap, 
-  Database, 
-  Infinity
-} from "lucide-react";
+import { Globe, Cpu, Zap, Database, Infinity } from "lucide-react";
 
 const services = [
   {
@@ -41,7 +35,7 @@ export default function ServicesSection() {
     <section id="services" className="py-24 px-6 relative overflow-hidden">
       <div className="absolute top-1/4 right-0 w-64 h-64 bg-blue-500/5 blur-[120px] rounded-full" />
       
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto text-right">
         <div className="text-center mb-20">
           <motion.h2 
             initial={{ opacity: 0, y: 20 }}
@@ -64,11 +58,11 @@ export default function ServicesSection() {
               viewport={{ once: true }}
               className="bg-white/5 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/10 hover:border-cyan-500/50 transition-all group"
             >
-              <div className="flex items-start gap-6">
+              <div className="flex flex-col md:flex-row-reverse items-start gap-6">
                 <div className="p-4 bg-white/5 rounded-2xl border border-white/10 group-hover:bg-cyan-500/10 transition-colors">
                   {service.icon}
                 </div>
-                <div className="flex-1 text-right">
+                <div className="flex-1">
                   <h3 className="text-2xl font-bold mb-3 dark:text-white group-hover:text-cyan-400 transition-colors">
                     {service.title}
                   </h3>
@@ -94,7 +88,7 @@ export default function ServicesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           className="mt-16 p-8 rounded-[3rem] bg-gradient-to-r from-cyan-600 to-blue-700 text-white flex flex-col md:flex-row items-center justify-between gap-8 shadow-2xl shadow-cyan-500/20"
         >
-          <div className="flex items-center gap-6 text-right">
+          <div className="flex flex-row-reverse items-center gap-6 text-right">
             <div className="p-4 bg-white/20 rounded-full backdrop-blur-md">
               <Infinity size={40} strokeWidth={1} />
             </div>
