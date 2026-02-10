@@ -21,7 +21,7 @@ const techLogos = [
   { name: "ChatGPT", src: "https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" },
   { name: "Copilot", src: "https://www.uscloud.com/wp-content/uploads/2024/04/Copilot-1536x864.webp" },
   { name: "Firebase", src: "https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" },
-  { name: "Vercel", src: "https://www.svgrepo.com/show/342111/vercel.svg" },
+  { name: "Vercel", src: "https://images.ctfassets.net/crb83veve8xb/2VaNf5PhpBlvKAUKYfmefe/5fdaf99f05704485b02e14e8d4addefb/vercel.webp" },
   { name: "Google Sheets", src: "https://upload.wikimedia.org/wikipedia/commons/3/30/Google_Sheets_logo_%282014-2020%29.svg" },
   { name: "Apps Script", src: "https://miro.medium.com/v2/resize:fit:1100/format:webp/0*F_c3g_2Ib_ucuG1c" },
   { name: "WhatsApp", src: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" },
