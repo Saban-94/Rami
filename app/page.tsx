@@ -17,14 +17,14 @@ import ContactSection from "../components/ContactSection";
 const techLogos = [
   { name: "Google", src: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
   { name: "Microsoft", src: "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" },
-  { name: "Gemini AI", src: "https://www.wespeakiot.com/wp-content/uploads/2025/08/google-gemini-new-rainbow-colours-1120w630h-960x630.webp" },
+  { name: "Gemini AI", src: "https://www.malwarebytes.com/wp-content/uploads/sites/2/2025/07/Gemini_logo.jpg" },
   { name: "ChatGPT", src: "https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg" },
-  { name: "Copilot", src: "https://adoption.microsoft.com/wp-content/uploads/2025/04/copilot_preview.jpg },
+  { name: "Copilot", src: "https://www.uscloud.com/wp-content/uploads/2024/04/Copilot-1536x864.webp" },
   { name: "Firebase", src: "https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" },
   { name: "Vercel", src: "https://www.svgrepo.com/show/342111/vercel.svg" },
   { name: "Google Sheets", src: "https://upload.wikimedia.org/wikipedia/commons/3/30/Google_Sheets_logo_%282014-2020%29.svg" },
+  { name: "Apps Script", src: "https://miro.medium.com/v2/resize:fit:1100/format:webp/0*F_c3g_2Ib_ucuG1c" },
   { name: "WhatsApp", src: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" },
-  { name: "Apps Script", src: "https://miro.medium.com/v2/resize:fit:1100/format:webp/0*F_c3g_2Ib_ucuG1c"
 ];
 
 export default function HomePage() {
