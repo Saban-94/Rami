@@ -4,7 +4,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, Rocket, ShieldCheck, Zap, 
-  MessageSquare, Send, Phone
+  MessageSquare, Phone, Laptop, Tablet, Smartphone 
 } from "lucide-react";
 import Navigation from "../components/Navigation";
 import StatsGrid from "../components/StatsGrid";
@@ -13,7 +13,7 @@ import ProjectsShowcase from "../components/ProjectsShowcase";
 import ServicesSection from "../components/ServicesSection";
 import ContactSection from "../components/ContactSection";
 
-// לוגואים למערכות שרמי מתמחה בהן
+// מערך לוגואים לסרט הנע
 const techLogos = [
   { name: "Google", src: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
   { name: "Microsoft", src: "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" },
@@ -25,8 +25,6 @@ const techLogos = [
   { name: "Google Sheets", src: "https://upload.wikimedia.org/wikipedia/commons/3/30/Google_Sheets_logo_%282014-2020%29.svg" },
   { name: "Apps Script", src: "https://upload.wikimedia.org/wikipedia/commons/d/da/Google_Apps_Script_logo.svg" },
   { name: "WhatsApp", src: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" },
-  { name: "Azure", src: "https://upload.wikimedia.org/wikipedia/commons/a/a8/Microsoft_Azure_Logo.svg" },
-  { name: "Power Automate", src: "https://upload.wikimedia.org/wikipedia/commons/d/d4/Microsoft_Power_Automate_Logo.svg" },
 ];
 
 export default function HomePage() {
@@ -36,32 +34,19 @@ export default function HomePage() {
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
 
-  const tickerVariants = {
-    animate: {
-      x: ["0%", "-100%"],
-      transition: {
-        x: {
-          repeat: Infinity,
-          repeatType: "loop",
-          duration: 30, // מהירות הסרט הנע
-          ease: "linear",
-        },
-      },
-    },
-  };
-
   return (
     <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] transition-colors duration-500 pb-20">
       <Navigation />
 
       {/* --- HERO SECTION --- */}
-      <section className="relative pt-32 pb-20 px-6 overflow-hidden text-right">
+      <section className="relative pt-32 pb-12 px-6 overflow-hidden text-right">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-cyan-500/10 via-blue-500/5 to-transparent blur-3xl opacity-60" />
         
         <div className="max-w-7xl mx-auto relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
           <motion.div 
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8 }}
             className="flex-1"
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 text-xs font-black mb-8 tracking-widest uppercase">
@@ -77,7 +62,7 @@ export default function HomePage() {
             </h1>
             
             <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mb-12 leading-relaxed">
-              מומחה בבניית מערכות ליבה עסקיות המשלבות בינה מלאכותית, ניהול לוגיסטי חכם ואינטגרציה מלאה.
+              מומחה בבניית מערכות ליבה עסקיות המשלבות בינה מלאכותית, ניהול לוגיסטי חכם ואינטגרציה מלאה בין פלטפורמות Google ו-Microsoft.
             </p>
             
             <div className="flex flex-wrap gap-5">
@@ -98,40 +83,58 @@ export default function HomePage() {
               </button>
             </div>
           </motion.div>
+
+          {/* ויזואל פרופיל יוקרתי */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex-1 relative hidden lg:block"
+          >
+            <div className="relative z-10 p-4 rounded-[3.5rem] bg-gradient-to-br from-white/20 to-transparent backdrop-blur-xl border border-white/30 shadow-2xl">
+              <div className="aspect-square bg-slate-900 rounded-[3rem] overflow-hidden relative grayscale hover:grayscale-0 transition-all duration-1000">
+                 <img 
+                   src="https://github.com/Saban-94.png" 
+                   alt="Rami Profile" 
+                   className="w-full h-full object-cover opacity-80"
+                 />
+                 <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/40 to-transparent" />
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
       {/* --- LOGO TICKER: סרט הלוגואים הנע --- */}
-      <div className="overflow-hidden whitespace-nowrap py-6 bg-white dark:bg-slate-950 border-y border-white/10 relative z-20">
+      <div className="py-10 bg-white/5 border-y border-white/5 overflow-hidden flex whitespace-nowrap relative z-20">
         <motion.div 
-          className="inline-block"
-          variants={tickerVariants}
-          initial="animate" // Start the animation immediately
-          animate="animate"
+          className="flex gap-16 flex-none items-center"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
         >
-          {/* כדי שהלוגואים יחזרו על עצמם וייצרו רצף חלק */}
           {[...techLogos, ...techLogos].map((logo, index) => (
             <img 
               key={index} 
               src={logo.src} 
               alt={logo.name} 
-              className="h-10 mx-8 inline-block opacity-60 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300"
-              style={{ maxHeight: '40px', width: 'auto' }} // Ensure consistent size
+              className="h-8 md:h-10 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all"
             />
           ))}
         </motion.div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 space-y-32">
+      <div className="max-w-7xl mx-auto px-6 space-y-32 mt-20">
+        {/* סטטיסטיקות */}
         <StatsGrid />
+
+        {/* שירותים וכלים */}
         <ServicesSection />
         
-        {/* פרויקטים */}
+        {/* פרויקטים נבחרים */}
         <section id="projects" className="scroll-mt-28">
           <ProjectsShowcase />
         </section>
 
-        {/* פאנל בקרה ומשימות דמה */}
+        {/* דמו שליטה ומשימות */}
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center text-right">
           <PlannerDemo />
           <div className="space-y-6">
@@ -140,18 +143,18 @@ export default function HomePage() {
               <span className="text-cyan-500">בזמן אמת</span>
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-lg">
-              המערכות שלנו עובדות מסביב לשעון. סנכרון מלא ב-Background לכל הפלטפורמות.
+              המערכות שבניתי מתוכננות לעבודה מאומצת. סנכרון מלא של דאטה עסקי מכל מקום בעולם.
             </p>
           </div>
         </section>
 
-        {/* טופס צור קשר מובנה */}
+        {/* צור קשר */}
         <section id="contact" className="scroll-mt-28 pb-20">
           <ContactSection />
         </section>
       </div>
 
-      {/* FLOATING WHATSAPP BUTTON */}
+      {/* --- FLOATING WHATSAPP BUTTON --- */}
       <motion.div 
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
@@ -160,7 +163,6 @@ export default function HomePage() {
         <button 
           onClick={openWhatsApp}
           className="p-5 bg-green-500 text-white rounded-full shadow-[0_0_20px_rgba(34,197,94,0.5)] hover:scale-110 transition-transform flex items-center justify-center"
-          title="דבר איתי בוואטסאפ"
         >
           <Phone size={28} fill="currentColor" />
         </button>
