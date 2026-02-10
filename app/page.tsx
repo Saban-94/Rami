@@ -29,21 +29,21 @@ const reviews = [
     role: "בעל מספרת VIP",
     text: "לא האמנתי שיש כלי יותר חזק מוואטסאפ רגיל. המערכת שראמי בנה לי משלבת ניהול תורים אוטומטי בתוך הצ'אט. זה פשוט עובד 24/7 בזמן שאני ישן!",
     stars: 5,
-    img: "https://i.pravatar.cc/150?u=avi"
+    img: "https://cdn.dribbble.com/userupload/29736698/file/original-1ef955c551eede8401da24a210ad3a86.jpg?resize=1024x768&vertical=center"
   },
   {
     name: "מיכל לוי",
     role: "סטודיו פילאטיס",
     text: "מאז הפנייה לראמי הוא ליווה אותי בכל שעה. האפליקציה הייתה באוויר תוך פחות מ-4 ימים! לקוחות קובעות שיעורים ב-3 בלילה והיומן שלי מתמלא לבד.",
     stars: 5,
-    img: "https://i.pravatar.cc/150?u=michal"
+    img: "https://cdn.dribbble.com/userupload/29736698/file/original-1ef955c551eede8401da24a210ad3a86.jpg?resize=1024x768&vertical=center"
   },
   {
     name: "דורון יצחקי",
     role: "קליניקה לקוסמטיקה",
     text: "ה-AI לומד את העסק שלך ופשוט עונה במקומך. התשלום עובר בביט או באשראי ישירות מהצ'אט. המכירות עלו ב-40% בלי מגע אדם.",
     stars: 5,
-    img: "https://i.pravatar.cc/150?u=doron"
+    img: "https://cdn.dribbble.com/userupload/29736698/file/original-1ef955c551eede8401da24a210ad3a86.jpg?resize=1024x768&vertical=center"
   }
 ];
 
