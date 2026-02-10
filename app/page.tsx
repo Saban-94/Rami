@@ -16,7 +16,7 @@ import ContactSection from "../components/ContactSection";
 const techLogos = [
   { name: "Google", src: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
   { name: "Microsoft", src: "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" },
-  { name: "Gemini", src: "https://www.gstatic.com/lamda/images/gemini-sparkle_360_08d13264c7810777326090e5015b3e20.svg" },
+  { name: "Gemini", src: "https://cheapmandu.com/product/google-gemini-ai/?srsltid=AfmBOopJvlt3ieA4uzm9OyRgW8T-WK1_EeYJ1askqN7Bfay_d8C24xwz" },
   { name: "Firebase", src: "https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" },
   { name: "Vercel", src: "https://www.svgrepo.com/show/342111/vercel.svg" },
   { name: "OneSignal", src: "https://upload.wikimedia.org/wikipedia/commons/f/f1/OneSignal_logo.svg" },
