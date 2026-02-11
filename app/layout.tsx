@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+// Metadata חייב להיות אובייקט פשוט בתוך קובץ שרת (Layout)
 export const metadata: Metadata = {
   title: "SabanOS | Business AI",
-  description: "ניהול עסקים חכם",
+  description: "מערכת ניהול חכמה",
   manifest: "/manifest.json",
 };
 
@@ -13,22 +14,13 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl">
       <head>
-        <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968841.png" />
-        {/* שימוש ב-Script של Next.js לטעינה בטוחה */}
-        <script 
-          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
-          defer
-        ></script>
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
-      <body>{children}</body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
