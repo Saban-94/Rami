@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Zap, MessageCircle } from "lucide-react";
+import { Bell } from "lucide-react";
 
-// שימוש בנתיבים יחסיים פשוטים - הכי בטוח למניעת שגיאות
+// שימוש בנתיבים יחסיים נקיים בלבד
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
 
@@ -14,7 +14,7 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // אתחול OneSignal בטוח בתוך הדפדפן
+    // אתחול OneSignal בטוח
     if (typeof window !== "undefined") {
       const win = window as any;
       win.OneSignalDeferred = win.OneSignalDeferred || [];
@@ -53,13 +53,13 @@ export default function HomePage() {
       {!isReady && (
         <button
           onClick={handleStart}
-          className="fixed top-24 left-6 z-[999] bg-orange-500 text-white px-6 py-3 rounded-2xl shadow-2xl animate-bounce font-bold border-2 border-white"
+          className="fixed top-24 left-6 z-[999] bg-orange-500 text-white px-6 py-3 rounded-2xl shadow-xl animate-bounce font-bold border-2 border-white"
         >
           🔔 הפעל צליל ואפליקציה
         </button>
       )}
 
-      <section className="pt-32 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 text-right">
+      <section className="pt-32 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
         <div className="flex-1 space-y-8">
           <h1 className="text-6xl md:text-8xl font-black dark:text-white leading-none tracking-tighter">
             העסק שלך <br /> <span className="text-green-500">עובד בשבילך.</span>
@@ -69,13 +69,12 @@ export default function HomePage() {
           </p>
           <button 
             onClick={() => window.open("https://wa.me/972508861080")}
-            className="px-12 py-6 bg-green-500 text-black font-black rounded-3xl text-2xl shadow-xl hover:scale-105 transition-all"
+            className="px-12 py-6 bg-green-500 text-black font-black rounded-3xl text-2xl shadow-xl"
           >
             קבל 15% הנחה עכשיו
           </button>
         </div>
 
-        {/* iPHONE SIMULATOR */}
         <div className="flex-1 relative">
           <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-[300px] shadow-2xl bg-[#0b141a] overflow-hidden">
             <div className="bg-[#1f2c34] p-4 flex items-center gap-3">
