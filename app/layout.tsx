@@ -23,7 +23,15 @@ export default function RootLayout({
         }
       });
     }
+  import Script from "next/script";
 
+// בתוך ה-return של ה-RootLayout:
+<head>
+  <Script 
+    src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
+    strategy="afterInteractive" 
+  />
+</head>
     // טריק "דריכת" האודיו
     const unlockAudio = () => {
       const audio = new Audio("/sounds/whatsapp.mp3");
