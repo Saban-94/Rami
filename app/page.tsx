@@ -2,15 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+// וודא שכל הייבואים למטה עטופים במרכאות!
 import { 
   Bell, ShieldCheck, Zap, MessageCircle, 
   Star, Clock, CheckCircle2, ShoppingCart, 
   Calendar, CreditCard, Send, Smartphone, Gift, EyeOff
 } from "lucide-react";
 
-// רכיבים (וודא שהם קיימים בתיקיית components שלך)
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
+// אם יש לך ייבוא ל-gemini-brain, וודא שהוא ככה:
+// import { processBusinessRequest } from "./actions/gemini-brain";
 
 // לוגואים רצים (Tech Stack)
 const techLogos = [
