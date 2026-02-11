@@ -1,82 +1,151 @@
 "use client";
+
 import React, { useEffect, useState } from "react";
 import { db } from "../../../lib/firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
-import { Clock, Package, Calendar, Share2, ShieldCheck } from "lucide-react";
+import { collection, onSnapshot, query, orderBy, doc, deleteDoc } from "firebase/firestore";
+import { motion } from "framer-motion";
+import { Users, Clock, MessageCircle, Trash2, ExternalLink, ShieldCheck } from "lucide-react";
 
 export default function AdminDashboard() {
   const [trials, setTrials] = useState<any[]>([]);
-  const businessId = "rami_demo_1"; // זה יימשך מה-Auth בעתיד
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // האזנה חיה למאגר הלינקים (Trials)
-    const q = query(collection(db, "trials"), where("businessId", "==", businessId));
+    // האזנה חיה לכל ה-Trials ב-Firebase
+    const q = query(collection(db, "trials"), orderBy("lastUpdate", "desc"));
+    
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const trialsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const trialsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
       setTrials(trialsData);
+      setLoading(false);
     });
+
     return () => unsubscribe();
   }, []);
 
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 text-right" dir="rtl">
-      <header className="mb-12">
-        <h1 className="text-3xl font-black dark:text-white">לוח בקרה - RamiOS</h1>
-        <p className="text-slate-500">נהל את העסק שלך ואת תקופות הניסיון של הלקוחות</p>
-      </header>
+  const calculateDaysLeft = (createdAt: any) => {
+    if (!createdAt) return 0;
+    const created = createdAt.seconds * 1000;
+    const now = Date.now();
+    const diff = now - created;
+    const tenDaysInMs = 10 * 24 * 60 * 60 * 1000;
+    const remaining = Math.max(0, Math.ceil((tenDaysInMs - diff) / (1000 * 60 * 60 * 24)));
+    return remaining;
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm">
-          <div className="flex justify-between items-start">
-            <Clock className="text-cyan-500" />
-            <span className="text-2xl font-black dark:text-white">{trials.length}</span>
-          </div>
-          <p className="mt-2 text-sm font-bold text-slate-500">לינקים פעילים</p>
+  const handleDelete = async (id: string) => {
+    if (window.confirm("למחוק את תקופת הניסיון הזו?")) {
+      await deleteDoc(doc(db, "trials", id));
+    }
+  };
+
+  if (loading) return <div className="h-screen flex items-center justify-center font-sans">טוען נתונים...</div>;
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 font-sans" dir="rtl">
+      {/* Header */}
+      <div className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+            <ShieldCheck className="text-emerald-500" size={36} />
+            RamiOS Control Panel
+          </h1>
+          <p className="text-slate-500 mt-1">ניהול תקופות ניסיון ולקוחות AI</p>
         </div>
-        {/* עוד כרטיסי סטטיסטיקה כאן */}
+        
+        <div className="flex gap-4">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center gap-4">
+            <div className="bg-emerald-500/10 p-2 rounded-lg text-emerald-500"><Users size={24} /></div>
+            <div>
+              <p className="text-xs text-slate-400">סה"כ לקוחות</p>
+              <p className="text-xl font-bold dark:text-white">{trials.length}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <section className="bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-white/10 overflow-hidden">
-        <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
-          <h2 className="text-xl font-bold dark:text-white">מעקב תקופות ניסיון (10 ימים)</h2>
-        </div>
+      {/* Main Table */}
+      <div className="max-w-7xl mx-auto bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-right">
+          <table className="w-full text-right border-collapse">
             <thead>
-              <tr className="text-slate-400 text-xs uppercase bg-slate-50 dark:bg-transparent">
-                <th className="p-4 font-bold">לקוח</th>
-                <th className="p-4 font-bold">תאריך יצירה</th>
-                <th className="p-4 font-bold">ימים שנותרו</th>
-                <th className="p-4 font-bold">סטטוס</th>
-                <th className="p-4 font-bold">פעולות</th>
+              <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-sm">
+                <th className="p-5 font-bold">לקוח / ID</th>
+                <th className="p-5 font-bold">הודעה אחרונה</th>
+                <th className="p-5 font-bold">זמן נותר</th>
+                <th className="p-5 font-bold">סטטוס</th>
+                <th className="p-5 font-bold">פעולות</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {trials.map((trial) => (
-                <tr key={trial.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                  <td className="p-4 font-bold dark:text-white">{trial.customerPhone}</td>
-                  <td className="p-4 text-slate-500 text-sm">{new Date(trial.createdAt.seconds * 1000).toLocaleDateString('he-IL')}</td>
-                  <td className="p-4">
-                     <span className="px-3 py-1 bg-cyan-500/10 text-cyan-500 rounded-full text-xs font-black">
-                        {Math.max(0, 10 - Math.floor((Date.now() - trial.createdAt.seconds * 1000) / (1000 * 60 * 60 * 24)))} ימים
-                     </span>
-                  </td>
-                  <td className="p-4">
-                    {trial.status === 'active' ? (
-                      <span className="text-emerald-500 text-xs font-bold flex items-center gap-1"><ShieldCheck size={14}/> פעיל</span>
-                    ) : (
-                      <span className="text-rose-500 text-xs font-bold">פג תוקף</span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    <button className="text-xs bg-slate-900 dark:bg-white dark:text-black text-white px-4 py-2 rounded-xl font-bold">פתח גישה</button>
-                  </td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {trials.map((trial) => {
+                const daysLeft = calculateDaysLeft(trial.createdAt);
+                const lastMsg = trial.messages?.[trial.messages.length - 1];
+
+                return (
+                  <motion.tr 
+                    layout
+                    key={trial.id} 
+                    className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors"
+                  >
+                    <td className="p-5">
+                      <div className="font-bold text-slate-900 dark:text-white">{trial.name || "לקוח ללא שם"}</div>
+                      <div className="text-xs text-slate-400 font-mono">{trial.id}</div>
+                    </td>
+                    <td className="p-5">
+                      <div className="text-sm text-slate-600 dark:text-slate-300 max-w-xs truncate">
+                        {lastMsg ? `"${lastMsg.content}"` : "אין הודעות עדיין"}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+                        <Clock size={10} /> {trial.lastUpdate?.toDate().toLocaleString('he-IL')}
+                      </div>
+                    </td>
+                    <td className="p-5">
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
+                        daysLeft > 3 ? "bg-emerald-100 text-emerald-600" : "bg-rose-100 text-rose-600"
+                      }`}>
+                        {daysLeft} ימים נותרו
+                      </div>
+                    </td>
+                    <td className="p-5">
+                      <span className="flex items-center gap-2 text-xs font-medium text-emerald-500">
+                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                        פעיל
+                      </span>
+                    </td>
+                    <td className="p-5 flex items-center gap-3">
+                      <a 
+                        href={`/chat/${trial.id}`} 
+                        target="_blank"
+                        className="p-2 text-slate-400 hover:text-emerald-500 transition-colors"
+                        title="צפה בצ'אט"
+                      >
+                        <ExternalLink size={20} />
+                      </a>
+                      <button 
+                        onClick={() => handleDelete(trial.id)}
+                        className="p-2 text-slate-400 hover:text-rose-500 transition-colors"
+                        title="מחק"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </td>
+                  </motion.tr>
+                );
+              })}
             </tbody>
           </table>
+          {trials.length === 0 && (
+            <div className="p-20 text-center text-slate-400">
+              <MessageCircle size={48} className="mx-auto mb-4 opacity-20" />
+              <p>אין תקופות ניסיון פעילות כרגע</p>
+            </div>
+          )}
         </div>
-      </section>
+      </div>
     </div>
   );
 }
