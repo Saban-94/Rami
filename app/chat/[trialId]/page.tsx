@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { db } from "@/lib/firebase";
+import { db } from "../../../lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, User, CheckCheck, Lock } from "lucide-react";
