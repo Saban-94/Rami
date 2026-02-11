@@ -22,7 +22,36 @@ const techLogos = [
   { name: "OneSignal", src: "https://upload.wikimedia.org/wikipedia/commons/f/f1/OneSignal_logo.svg" },
   { name: "WhatsApp", src: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" },
 ];
+useEffect(() => {
+  // --- אתחול OneSignal ---
+  if (typeof window !== "undefined") {
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function(OneSignal: any) {
+      await OneSignal.init({
+        appId: "91e6c6f7-5fc7-47d0-b114-b1694f408258",
+        safari_web_id: "web.onesignal.auto.103e3009-847e-4061-9f93-41c390500742", // אם יש לך, אם לא - OneSignal יזהה אוטומטית
+        notifyButton: {
+          enable: true, // מציג את כפתור הפעמון הקטן בפינה
+        },
+      });
+    });
+  }
 
+  // --- לוגיקת הסאונד והתראות דפדפן הקודמת ---
+  if ("Notification" in window) {
+    Notification.requestPermission();
+  }
+
+  const unlockAudio = () => {
+    const audio = new Audio("/sounds/whatsapp.mp3");
+    audio.play().then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }).catch(() => {});
+    document.removeEventListener('click', unlockAudio);
+  };
+  document.addEventListener('click', unlockAudio);
+}, []);
 const reviews = [
   {
     name: "אבי ביטון",
