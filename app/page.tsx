@@ -4,9 +4,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Zap } from "lucide-react";
 
-// נתיבים יחסיים בלבד - מונע ReferenceError: app
+// תיקון: ייבוא יחסי ישיר בלי Alias של @/
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
+
 
 export default function HomePage() {
   const [chatStep, setChatStep] = useState(0);
