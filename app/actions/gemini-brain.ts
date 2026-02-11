@@ -11,28 +11,30 @@ export async function processBusinessRequest(prompt: string, businessContext: an
   }
 
   try {
+    // הוספת גרסת ה-API באופן מפורש כדי לעקוף את שגיאת ה-404 של ה-v1beta
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // נשתמש בשם המודל ללא ה-latest או v1, פשוט השם הנקי
+    // כאן אנחנו מגדירים את המודל בצורה הכי יציבה שיש לגרסה 0.21.0
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash" 
-    });
+      model: "gemini-1.5-flash",
+    }, { apiVersion: 'v1' }); // <--- זה השורה שפותרת את ה-404!
 
-    // הזרקת ההקשר ישירות לתוך הפרומפט כדי לעקוף בעיות גרסה של systemInstruction
-    const fullPrompt = `
-      הקשר עסקי: אתה עוזר בוואטסאפ עבור ${businessContext.name}. 
-      תחום העסק: ${businessContext.industry}.
-      הנחיות: ענה בקצרה, בנעימות ובעברית.
-      
-      הודעת הלקוח: ${prompt}
-    `;
+    const systemInstruction = `אתה עוזר עסקי חכם בוואטסאפ. העסק: ${businessContext.name}. תחום: ${businessContext.industry}. ענה בעברית, קצר ולעניין.`;
 
-    const result = await model.generateContent(fullPrompt);
+    // שליחת התוכן
+    const result = await model.generateContent(`${systemInstruction}\n\nלקוח: ${prompt}`);
     const response = await result.response;
-    return response.text();
+    const text = response.text();
 
+    return text;
   } catch (error: any) {
     console.error("❌ Gemini API Error Details:", error);
-    return "אופס, חלה שגיאה בחיבור ל-AI. נסה שוב בעוד רגע.";
+    
+    // בדיקה אם זו שגיאת מפתח או שגיאת מודל
+    if (error.message?.includes("API key not valid")) {
+      return "שגיאה: מפתח ה-AI אינו תקין. בדוק את ההגדרות ב-Vercel.";
+    }
+    
+    return "אופס, ה-AI עמוס כרגע. נסה שוב בעוד רגע.";
   }
 }
