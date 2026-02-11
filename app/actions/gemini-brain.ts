@@ -4,22 +4,33 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-export async function processBusinessRequest(prompt: string, history: any[], businessContext: any) {
+export async function processBusinessRequest(prompt: string, history: any, businessContext: any) {
   try {
-    // הגנה: אם businessContext לא הגיע, נשתמש בערכי ברירת מחדל
+    // 1. הגנה על ה-Context
     const bName = businessContext?.name || "SabanOS";
     const bIndustry = businessContext?.industry || "Automation";
 
     const model = genAI.getGenerativeModel({ 
       model: "gemini-1.5-flash",
-      systemInstruction: `אתה העוזר של ${bName}. התחום הוא ${bIndustry}. תענה תמיד בעברית, קצר, ולעניין. אל תחזור על הצהרות שירות שכבר נאמרו.`
+      systemInstruction: `אתה העוזר של ${bName}. התחום: ${bIndustry}. תענה תמיד בעברית, קצר, ולעניין. אל תחזור על הצהרות שירות שכבר נאמרו.`
     });
 
-    // המרה נכונה של ההיסטוריה לפורמט של Google SDK
-    const formattedHistory = (history || []).map(msg => ({
-      role: msg.role === "user" ? "user" : "model",
-      parts: [{ text: msg.content || "" }],
-    }));
+    // 2. תיקון קריטי: וודוא שההיסטוריה היא מערך
+    let safeHistory = [];
+    if (Array.isArray(history)) {
+      safeHistory = history;
+    } else if (typeof history === 'object' && history !== null) {
+      // אם זה אובייקט בודד, נכניס אותו למערך
+      safeHistory = [history];
+    }
+
+    // 3. המרה לפורמט שגימני דורש (role ו-parts)
+    const formattedHistory = safeHistory
+      .filter((msg: any) => msg && msg.content) // סינון הודעות ריקות
+      .map((msg: any) => ({
+        role: msg.role === "user" ? "user" : "model",
+        parts: [{ text: String(msg.content) }],
+      }));
 
     const chat = model.startChat({
       history: formattedHistory,
@@ -31,7 +42,7 @@ export async function processBusinessRequest(prompt: string, history: any[], bus
 
   } catch (error) {
     console.error("Gemini Action Error:", error);
-    // החזרת הודעה ידידותית במקום קריסה
+    // החזרת הודעה במקום קריסת המערכת
     return "אופס, ה-AI עמוס כרגע. נסה שוב בעוד רגע.";
   }
 }
