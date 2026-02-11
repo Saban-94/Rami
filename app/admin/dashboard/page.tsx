@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { Send, CheckCheck, Paperclip, MoreVertical, ChevronRight, Camera } from "lucide-react";
-import { processBusinessRequest } from "@/app/actions/gemini-brain";
+import { processBusinessRequest } from "../../actions/gemini-brain";
 
 interface Message {
   role: "user" | "model";
