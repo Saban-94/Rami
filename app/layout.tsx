@@ -5,18 +5,12 @@ export const metadata: Metadata = {
   title: "SabanOS | Business AI",
   description: "מערכת ניהול חכמה מבוססת AI",
   manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "SabanOS",
-  },
 };
 
 export const viewport: Viewport = {
   themeColor: "#075e54",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({
@@ -28,7 +22,6 @@ export default function RootLayout({
     <html lang="he" dir="rtl">
       <head>
         <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968841.png" />
-        {/* חיבור OneSignal חיצוני */}
         <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
       </head>
       <body>{children}</body>
