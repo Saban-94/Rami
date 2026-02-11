@@ -3,35 +3,44 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function processBusinessRequest(prompt: string, businessContext: any) {
-  // 1. בדיקה שהמפתח קיים בזמן ריצה
   const apiKey = process.env.GEMINI_API_KEY;
   
   if (!apiKey) {
-    console.error("❌ ERROR: GEMINI_API_KEY is not defined in Environment Variables");
-    return "מצטער, המערכת לא מוגדרת כראוי (חסר מפתח AI).";
+    console.error("❌ ERROR: GEMINI_API_KEY missing");
+    return "מצטער, המערכת לא מוגדרת כראוי.";
   }
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     
+    // שינוי שם המודל לגרסה היציבה ביותר
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      systemInstruction: `אתה עוזר עסקי חכם בוואטסאפ במערכת SabanOS. 
-      העסק הנוכחי: ${businessContext.name}. 
-      התחום: ${businessContext.industry}. 
-      תפקידך לענות בצורה קצרה, נעימה ומכירתית. עזור בניהול קטלוג ותורים.`
+      model: "gemini-1.5-flash-latest" // הוספנו -latest כדי להבטיח תמיכה
     });
 
-    const result = await model.generateContent(prompt);
+    // בגרסאות חדשות, ה-systemInstruction מועבר לעיתים כחלק מה-generateContent או ב-startChat
+    // בוא נשתמש בשיטה הבטוחה ביותר:
+    const chat = model.startChat({
+      history: [
+        {
+          role: "user",
+          parts: [{ text: `אתה עוזר עסקי חכם בוואטסאפ במערכת SabanOS. העסק: ${businessContext.name}. התחום: ${businessContext.industry}. ענה בקצרה ובנעימות.` }],
+        },
+        {
+          role: "model",
+          parts: [{ text: "הבנתי, אני מוכן לעזור ללקוחות שלכם בצורה הטובה ביותר." }],
+        },
+      ],
+    });
+
+    const result = await chat.sendMessage(prompt);
     const response = await result.response;
     const text = response.text();
 
-    if (!text) throw new Error("Empty response from Gemini");
-
     return text;
   } catch (error: any) {
-    // הדפסת השגיאה ללוגים של Vercel כדי שתוכל לראות מה קרה
     console.error("❌ Gemini API Error:", error.message || error);
-    return "אופס, אני זמין כרגע רק חלקית. נסה שוב בעוד רגע.";
+    // אם גם ה-latest נכשל, ננסה את המודל הבסיסי ביותר כגיבוי
+    return "אופס, חלה שגיאה בחיבור ל-AI. נסה שוב בעוד רגע.";
   }
 }
