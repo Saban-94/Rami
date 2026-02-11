@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Zap, MessageCircle } from "lucide-react";
 
-// וודא שהנתיבים האלו קיימים בתיקיית ה-components שלך
+// נתיבים יחסיים בלבד - בלי המילה app
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
 
@@ -14,7 +14,7 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // אתחול בטוח של OneSignal
+    // אתחול OneSignal בטוח
     if (typeof window !== "undefined") {
       const win = window as any;
       win.OneSignalDeferred = win.OneSignalDeferred || [];
@@ -25,6 +25,7 @@ export default function HomePage() {
       });
     }
 
+    // סימולטור צ'אט
     const interval = setInterval(() => {
       setChatStep((prev) => {
         const next = prev < 3 ? prev + 1 : 0;
@@ -59,7 +60,7 @@ export default function HomePage() {
       {!notificationsEnabled && (
         <button
           onClick={handleEnableAll}
-          className="fixed top-24 left-6 z-[100] bg-orange-500 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border-2 border-white animate-bounce"
+          className="fixed top-24 left-6 z-[50] bg-orange-500 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border-2 border-white animate-bounce"
         >
           <Bell size={20} />
           <span className="font-bold text-sm">הפעל צלצול והתראות</span>
@@ -74,11 +75,15 @@ export default function HomePage() {
           <p className="text-xl text-slate-500 dark:text-slate-400">
             ניהול תורים וסליקה אוטומטית בוואטסאפ - SabanOS AI.
           </p>
-          <button onClick={() => window.open("https://wa.me/972508861080")} className="px-12 py-6 bg-green-500 text-black font-black rounded-3xl text-2xl shadow-xl">
+          <button 
+            onClick={() => window.open("https://wa.me/972508861080")} 
+            className="px-12 py-6 bg-green-500 text-black font-black rounded-3xl text-2xl shadow-xl hover:scale-105 transition-all"
+          >
             קבל 15% הנחה עכשיו
           </button>
         </div>
 
+        {/* SIMULATOR */}
         <div className="flex-1 relative">
           <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-[300px] shadow-2xl bg-[#0b141a] overflow-hidden">
             <div className="bg-[#1f2c34] p-4 flex items-center gap-3">
@@ -86,10 +91,15 @@ export default function HomePage() {
               <div className="text-white text-xs font-bold">העוזר של שירה</div>
             </div>
             <div className="p-4 space-y-4">
-              <AnimatePresence>
+              <AnimatePresence mode="wait">
                 {chatStep >= 0 && (
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#1f2c34] p-2 rounded-lg text-white text-[11px] mr-auto">
-                    שלום! רוצה לקבוע תור?
+                    שלום! שירה כאן. רוצה לקבוע תור?
+                  </motion.div>
+                )}
+                {chatStep >= 1 && (
+                  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#005c4b] p-2 rounded-lg text-white text-[11px] ml-auto">
+                    כן, למחר בבוקר.
                   </motion.div>
                 )}
               </AnimatePresence>
