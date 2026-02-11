@@ -13,34 +13,26 @@ export async function processBusinessRequest(prompt: string, businessContext: an
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // שינוי שם המודל לגרסה היציבה ביותר
+    // נשתמש בשם המודל ללא ה-latest או v1, פשוט השם הנקי
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash-latest" // הוספנו -latest כדי להבטיח תמיכה
+      model: "gemini-1.5-flash" 
     });
 
-    // בגרסאות חדשות, ה-systemInstruction מועבר לעיתים כחלק מה-generateContent או ב-startChat
-    // בוא נשתמש בשיטה הבטוחה ביותר:
-    const chat = model.startChat({
-      history: [
-        {
-          role: "user",
-          parts: [{ text: `אתה עוזר עסקי חכם בוואטסאפ במערכת SabanOS. העסק: ${businessContext.name}. התחום: ${businessContext.industry}. ענה בקצרה ובנעימות.` }],
-        },
-        {
-          role: "model",
-          parts: [{ text: "הבנתי, אני מוכן לעזור ללקוחות שלכם בצורה הטובה ביותר." }],
-        },
-      ],
-    });
+    // הזרקת ההקשר ישירות לתוך הפרומפט כדי לעקוף בעיות גרסה של systemInstruction
+    const fullPrompt = `
+      הקשר עסקי: אתה עוזר בוואטסאפ עבור ${businessContext.name}. 
+      תחום העסק: ${businessContext.industry}.
+      הנחיות: ענה בקצרה, בנעימות ובעברית.
+      
+      הודעת הלקוח: ${prompt}
+    `;
 
-    const result = await chat.sendMessage(prompt);
+    const result = await model.generateContent(fullPrompt);
     const response = await result.response;
-    const text = response.text();
+    return response.text();
 
-    return text;
   } catch (error: any) {
-    console.error("❌ Gemini API Error:", error.message || error);
-    // אם גם ה-latest נכשל, ננסה את המודל הבסיסי ביותר כגיבוי
+    console.error("❌ Gemini API Error Details:", error);
     return "אופס, חלה שגיאה בחיבור ל-AI. נסה שוב בעוד רגע.";
   }
 }
