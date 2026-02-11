@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Zap } from "lucide-react";
+import { Bell, Zap, MessageCircle } from "lucide-react";
 
-// ייבוא נקי - בלי תוספות בסוף השורה
+// שימוש בנתיבים יחסיים פשוטים - מונע שגיאות ReferenceError: app
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
 
@@ -14,7 +14,7 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // אתחול OneSignal רק בצד הלקוח
+    // אתחול OneSignal רק בדפדפן
     if (typeof window !== "undefined") {
       const win = window as any;
       win.OneSignalDeferred = win.OneSignalDeferred || [];
@@ -33,7 +33,7 @@ export default function HomePage() {
   }, []);
 
   const handleActivation = () => {
-    // הפעלת אודיו ופתיחת התראות
+    // שחרור חסימת אודיו ו-OneSignal
     if (audioRef.current) {
       audioRef.current.play().then(() => {
         audioRef.current?.pause();
@@ -49,6 +49,7 @@ export default function HomePage() {
       <Navigation />
       <audio ref={audioRef} src="/sounds/whatsapp.mp3" preload="auto" />
 
+      {/* כפתור הפעלה צף - חיוני לצלצול ולהתקנה כאפליקציה */}
       {!isReady && (
         <button
           onClick={handleActivation}
@@ -58,13 +59,13 @@ export default function HomePage() {
         </button>
       )}
 
-      <section className="pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+      <section className="pt-32 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
         <div className="flex-1 space-y-8">
           <h1 className="text-6xl md:text-8xl font-black dark:text-white leading-none tracking-tighter">
             העסק שלך <br /> <span className="text-green-500">עובד בשבילך.</span>
           </h1>
           <p className="text-xl text-slate-500 dark:text-slate-400 font-medium">
-            SabanOS AI - ניהול תורים וסליקה אוטומטית בוואטסאפ.
+            SabanOS AI - ניהול תורים, קטלוג וסליקה אוטומטית בוואטסאפ.
           </p>
           <button 
             onClick={() => window.open("https://wa.me/972508861080")}
@@ -74,11 +75,12 @@ export default function HomePage() {
           </button>
         </div>
 
+        {/* SIMULATOR */}
         <div className="flex-1 relative">
-          <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-[300px] shadow-2xl bg-[#0b141a] overflow-hidden">
+          <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-[300px] shadow-2xl bg-[#0b141a] overflow-hidden text-right">
             <div className="bg-[#1f2c34] p-4 flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-[10px] font-bold text-black">AI</div>
-              <div className="text-white text-xs font-bold">העוזר של שירה</div>
+              <div className="text-white text-[12px] font-bold">העוזר של שירה</div>
             </div>
             <div className="p-4 space-y-4">
               <AnimatePresence mode="wait">
