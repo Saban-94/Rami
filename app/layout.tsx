@@ -18,8 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="he" dir="rtl" suppressHydrationWarning>
-      <body className={`${heebo.variable} font-hebrew bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white transition-colors duration-300`}>
-        <ThemeProvider attribute="class" defaultTheme="dark">
+<body className={`${heebo.variable} font-hebrew bg-white text-slate-900 dark:bg-[#0F172A] dark:text-slate-50 antialiased transition-colors duration-300 opacity-100`}>        <ThemeProvider attribute="class" defaultTheme="dark">
           <Navigation />
           <div className="pt-16">
             {children}
