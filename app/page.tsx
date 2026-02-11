@@ -2,94 +2,139 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Zap } from "lucide-react";
-
-// תיקון: ייבוא יחסי ישיר בלי Alias של @/
+import { Bell, Zap, Send, Smartphone } from "lucide-react";
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
 
-
 export default function HomePage() {
   const [chatStep, setChatStep] = useState(0);
+  const [isTyping, setIsTyping] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // לוגיקת סימולטור צ'אט חכם
   useEffect(() => {
-    // הרצה רק בדפדפן כדי למנוע שגיאות Prerendering
-    if (typeof window !== "undefined") {
-      const win = window as any;
-      win.OneSignalDeferred = win.OneSignalDeferred || [];
-      win.OneSignalDeferred.push(async function(OneSignal: any) {
-        await OneSignal.init({
-          appId: "91e6c6f7-5fc7-47d0-b114-b1694f408258",
-        });
-      });
-    }
+    const sequence = async () => {
+      setIsTyping(true);
+      await new Promise(r => setTimeout(r, 2000));
+      setIsTyping(false);
+      setChatStep(prev => (prev < 2 ? prev + 1 : 0));
+    };
 
-    const interval = setInterval(() => {
-      setChatStep((prev) => (prev < 1 ? prev + 1 : 0));
-    }, 5000);
-
+    const interval = setInterval(sequence, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [chatStep]);
 
-  const handleStart = () => {
+  const handleInteraction = () => {
+    // רטט בנייד (Haptic Feedback)
+    if (typeof window !== "undefined" && window.navigator.vibrate) {
+      window.navigator.vibrate(15);
+    }
+    
+    // שחרור אודיו
     if (audioRef.current) {
       audioRef.current.play().then(() => {
         audioRef.current?.pause();
         setIsReady(true);
       }).catch(() => {});
     }
-    const win = window as any;
-    if (win.OneSignal) win.OneSignal.showNativePrompt();
   };
 
   return (
-    <main className="min-h-screen bg-white dark:bg-[#020617] text-right" dir="rtl">
+    <main className="min-h-screen bg-[#020617] text-white selection:bg-green-500/30">
       <Navigation />
       <audio ref={audioRef} src="/sounds/whatsapp.mp3" preload="auto" />
 
+      {/* כפתור הפעלה בעיצוב Glass */}
       {!isReady && (
-        <button
-          onClick={handleStart}
-          className="fixed top-24 left-6 z-[999] bg-orange-600 text-white px-6 py-3 rounded-2xl shadow-2xl animate-bounce font-bold border-2 border-white"
+        <motion.button
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          onClick={handleInteraction}
+          className="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] bg-white/10 backdrop-blur-md border border-white/20 px-8 py-4 rounded-full shadow-2xl flex items-center gap-3"
         >
-          🔔 הפעל צליל ואפליקציה
-        </button>
+          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+          <span className="font-bold">הפעל חוויית AI מלאה</span>
+        </motion.button>
       )}
 
-      <section className="pt-32 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
-        <div className="flex-1 space-y-8">
-          <h1 className="text-6xl md:text-8xl font-black dark:text-white leading-none tracking-tighter">
-            העסק שלך <br /> <span className="text-green-500">עובד בשבילך.</span>
-          </h1>
-          <button 
-            onClick={() => window.open("https://wa.me/972508861080")}
-            className="px-12 py-6 bg-green-500 text-black font-black rounded-3xl text-2xl shadow-xl hover:scale-110 transition-all"
+      {/* HERO SECTION */}
+      <section className="relative pt-40 pb-20 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-20">
+        <div className="flex-1 space-y-10 text-right z-10">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="inline-block px-4 py-2 bg-green-500/10 border border-green-500/20 rounded-full text-green-400 font-mono text-sm"
           >
-            קבל 15% הנחה עכשיו
-          </button>
+            OS v2.0 - הניהול הופך לאוטומטי
+          </motion.div>
+          <h1 className="text-7xl md:text-9xl font-black leading-[0.9] tracking-tighter italic">
+            Saban<span className="text-green-500">OS</span>
+          </h1>
+          <p className="text-2xl text-slate-400 max-w-xl">
+            מערכת ההפעלה הראשונה לעסק שלך שרצה לגמרי בתוך הוואטסאפ.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <button 
+              onMouseDown={handleInteraction}
+              className="bg-green-500 text-black px-10 py-5 rounded-2xl font-black text-xl hover:shadow-[0_0_30px_rgba(34,197,94,0.4)] transition-all"
+            >
+              התחל עכשיו
+            </button>
+            <button className="bg-white/5 backdrop-blur-sm border border-white/10 px-10 py-5 rounded-2xl font-bold text-xl">
+              איך זה עובד?
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 relative">
-          <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-[300px] shadow-2xl bg-[#0b141a] overflow-hidden">
-            <div className="bg-[#1f2c34] p-4 flex items-center gap-3 border-b border-white/5">
-              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-[10px] font-bold">AI</div>
-              <div className="text-white text-xs font-bold">SabanOS AI</div>
+        {/* iPHONE SIMULATOR - GLASSMORPHISM */}
+        
+        <div className="flex-1 relative group">
+          <div className="absolute -inset-10 bg-green-500/20 blur-[100px] rounded-full group-hover:bg-green-500/30 transition-all" />
+          <div className="relative mx-auto border-[8px] border-white/10 rounded-[3rem] h-[650px] w-[320px] bg-black/40 backdrop-blur-2xl overflow-hidden shadow-2xl border-b-[15px]">
+            {/* WhatsApp Header */}
+            <div className="bg-white/5 p-6 pt-12 border-b border-white/10 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-green-500 to-emerald-700" />
+              <div>
+                <p className="font-bold text-sm">SabanOS AI</p>
+                <p className="text-[10px] text-green-500">מחובר למערכת העסק</p>
+              </div>
             </div>
+
+            {/* Chat Body */}
             <div className="p-4 space-y-4">
-              <AnimatePresence mode="wait">
-                {chatStep === 0 && (
-                  <motion.div key="0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#1f2c34] p-2 rounded-lg text-white text-[11px] mr-auto">
-                    שלום! רוצה להפוך את העסק שלך לאוטומטי?
-                  </motion.div>
-                )}
-                {chatStep === 1 && (
-                  <motion.div key="1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#005c4b] p-2 rounded-lg text-white text-[11px] ml-auto">
-                    כן, אני רוצה לקבוע תורים בוואטסאפ.
+              <div className="bg-white/5 p-3 rounded-2xl text-[12px] max-w-[80%] mr-auto rounded-tl-none">
+                היי רמי, זיהיתי לקוח חדש שרוצה קוסמטיקה למחר ב-10:00. לאשר?
+              </div>
+              
+              <AnimatePresence>
+                {isTyping && (
+                  <motion.div 
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    className="flex gap-1 p-2 bg-green-600/20 w-12 rounded-full justify-center"
+                  >
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce" />
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-bounce [animation-delay:0.4s]" />
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {chatStep >= 1 && (
+                <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="bg-green-600 p-3 rounded-2xl text-[12px] max-w-[80%] ml-auto rounded-tr-none shadow-lg">
+                  כן, תאשר ותשלח לו לינק לסליקה.
+                </motion.div>
+              )}
+            </div>
+
+            {/* WhatsApp Input Mockup */}
+            <div className="absolute bottom-6 left-0 right-0 px-4">
+              <div className="bg-white/10 p-3 rounded-full flex items-center gap-2 border border-white/10">
+                <div className="flex-1 text-[10px] text-slate-500 pr-2">כתוב הודעה...</div>
+                <Send size={16} className="text-green-500" />
+              </div>
             </div>
           </div>
         </div>
