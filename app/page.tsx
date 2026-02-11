@@ -4,9 +4,16 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Zap, MessageCircle } from "lucide-react";
 
-// נתיבים יחסיים בלבד - בלי המילה app
+// שימוש בנתיב יחסי נקי ללא המילה app - זה פותר את ה-ReferenceError
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
+
+// הגדרת טיפוס למניעת שגיאות ב-Build
+declare global {
+  interface Window {
+    OneSignalDeferred: any;
+  }
+}
 
 export default function HomePage() {
   const [chatStep, setChatStep] = useState(0);
@@ -14,7 +21,7 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // אתחול OneSignal בטוח
+    // אתחול OneSignal
     if (typeof window !== "undefined") {
       const win = window as any;
       win.OneSignalDeferred = win.OneSignalDeferred || [];
@@ -25,7 +32,6 @@ export default function HomePage() {
       });
     }
 
-    // סימולטור צ'אט
     const interval = setInterval(() => {
       setChatStep((prev) => {
         const next = prev < 3 ? prev + 1 : 0;
@@ -83,7 +89,6 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* SIMULATOR */}
         <div className="flex-1 relative">
           <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-[300px] shadow-2xl bg-[#0b141a] overflow-hidden">
             <div className="bg-[#1f2c34] p-4 flex items-center gap-3">
