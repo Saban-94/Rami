@@ -1,35 +1,30 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, MessageCircle, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Bell, Zap, MessageCircle } from "lucide-react";
 
-// התאם את הנתיבים בהתאם למבנה שלך
-import Navigation from '../components/Navigation';
-import ContactSection from '../components/ContactSection';
+// שימוש בנתיבים יחסיים פשוטים - הכי בטוח למניעת שגיאות
+import Navigation from "../components/Navigation";
+import ContactSection from "../components/ContactSection";
 
 export default function HomePage() {
   const [chatStep, setChatStep] = useState(0);
   const [isReady, setIsReady] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // אתחול OneSignal + סימולטור צ'אט — בצד לקוח בלבד
   useEffect(() => {
-    // OneSignal: מאתחלים רק בדפדפן
-    if (typeof window !== 'undefined') {
+    // אתחול OneSignal בטוח בתוך הדפדפן
+    if (typeof window !== "undefined") {
       const win = window as any;
       win.OneSignalDeferred = win.OneSignalDeferred || [];
-      win.OneSignalDeferred.push(async (OneSignal: any) => {
-        try {
-          await OneSignal.init({
-            appId: '91e6c6f7-5fc7-47d0-b114-b1694f408258',
-            allowLocalhostAsSecureOrigin: true,
-          });
-        } catch { /* no-op */ }
+      win.OneSignalDeferred.push(async function(OneSignal: any) {
+        await OneSignal.init({
+          appId: "91e6c6f7-5fc7-47d0-b114-b1694f408258",
+        });
       });
     }
 
-    // סימולציית צ'אט (שלושת המצבים)
     const interval = setInterval(() => {
       setChatStep((prev) => (prev < 2 ? prev + 1 : 0));
     }, 5000);
@@ -37,142 +32,74 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // מפעיל סאונד פעם אחת (לשחרור נעילת אודיו) + מזמין הרשאת Push
-  const startApp = () => {
-    try {
-      audioRef.current?.play?.().then(() => {
-        audioRef.current?.pause?.();
+  const handleStart = () => {
+    if (audioRef.current) {
+      audioRef.current.play().then(() => {
+        audioRef.current?.pause();
         setIsReady(true);
       }).catch(() => {});
-    } catch {}
-
-    if (typeof window !== 'undefined') {
-      const win = window as any;
-      if (win.OneSignal?.showSlidedownPrompt) {
-        win.OneSignal.showSlidedownPrompt();
-      }
+    }
+    const win = window as any;
+    if (win.OneSignal) {
+      win.OneSignal.showNativePrompt();
     }
   };
 
-  const chatMessage = useMemo(() => {
-    if (chatStep === 0) return 'שלום! רוצה להפוך את העסק שלך לאוטומטי?';
-    if (chatStep === 1) return 'כן, אני רוצה לקבוע תורים בוואטסאפ.';
-    return 'מעולה! מתחילים בהגדרות מהירות, ותוך דקות הרובוט עובד בשבילך.';
-  }, [chatStep]);
-
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-zinc-900 dark:to-zinc-950">
+    <main className="min-h-screen bg-white dark:bg-[#020617] text-right" dir="rtl">
       <Navigation />
+      <audio ref={audioRef} src="/sounds/whatsapp.mp3" preload="auto" />
 
-      {/* HERO */}
-      <section className="relative py-20">
-        <div className="mx-auto max-w-6xl px-4">
-          <div className="grid items-center gap-10 lg:grid-cols-2">
-            {/* טקסט */}
-            <div>
-              <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
-                העסק שלך <span className="text-emerald-500">עובד בשבילך</span>.
-              </h1>
-              <p className="mt-4 text-slate-600 dark:text-slate-300">
-                SabanOS AI — ניהול תורים וסליקה אוטומטית בצ׳אט בסגנון ווצאף. התראות בזמן אמת, ושמירה למאגר מאובטח.
-              </p>
+      {!isReady && (
+        <button
+          onClick={handleStart}
+          className="fixed top-24 left-6 z-[999] bg-orange-500 text-white px-6 py-3 rounded-2xl shadow-2xl animate-bounce font-bold border-2 border-white"
+        >
+          🔔 הפעל צליל ואפליקציה
+        </button>
+      )}
 
-              <div className="mt-8 flex flex-wrap gap-3">
-                {!isReady && (
-                  <button
-                    onClick={startApp}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-amber-400 text-black font-black px-6 py-3 shadow-lg hover:scale-[1.02] transition"
-                    title="הפעל צליל ואפליקציה"
-                  >
-                    <Bell className="w-5 h-5" />
-                    הפעל צליל ואפליקציה
-                  </button>
-                )}
+      <section className="pt-32 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16 text-right">
+        <div className="flex-1 space-y-8">
+          <h1 className="text-6xl md:text-8xl font-black dark:text-white leading-none tracking-tighter">
+            העסק שלך <br /> <span className="text-green-500">עובד בשבילך.</span>
+          </h1>
+          <p className="text-xl text-slate-500 dark:text-slate-400">
+            SabanOS AI - ניהול תורים וסליקה אוטומטית בוואטסאפ.
+          </p>
+          <button 
+            onClick={() => window.open("https://wa.me/972508861080")}
+            className="px-12 py-6 bg-green-500 text-black font-black rounded-3xl text-2xl shadow-xl hover:scale-105 transition-all"
+          >
+            קבל 15% הנחה עכשיו
+          </button>
+        </div>
 
-                <button
-                  onClick={() => {
-                    if (typeof window !== 'undefined') {
-                      window.open('https://wa.me/972508861080', '_blank', 'noopener,noreferrer');
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-green-500 text-black font-black px-6 py-3 shadow-lg hover:scale-[1.02] transition"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  קבל 15% הנחה עכשיו
-                </button>
-
-                <a
-                  href="#contact"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-300/60 dark:border-slate-700/60 px-6 py-3 hover:bg-slate-100/50 dark:hover:bg-white/5 transition"
-                >
-                  <Zap className="w-5 h-5 text-emerald-500" />
-                  בקש דמו / רכישה
-                </a>
-              </div>
+        {/* iPHONE SIMULATOR */}
+        <div className="flex-1 relative">
+          <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-[300px] shadow-2xl bg-[#0b141a] overflow-hidden">
+            <div className="bg-[#1f2c34] p-4 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-[10px] font-bold">AI</div>
+              <div className="text-white text-xs font-bold font-sans">SabanOS AI</div>
             </div>
-
-            {/* סימולטור צ'אט */}
-            <div className="relative">
-              <div className="rounded-[2.4rem] border border-white/10 dark:border-white/10 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-2xl shadow-2xl p-2 w-full max-w-sm mx-auto">
-                <div className="rounded-[2rem] bg-slate-100/60 dark:bg-zinc-800/60 border border-black/5 dark:border-white/10 overflow-hidden">
-                  <div className="h-6 bg-gradient-to-r from-black/50 via-black/30 to-black/50 rounded-b-2xl mx-auto w-40 mt-2" />
-                  <div className="p-4 h-[420px] flex flex-col gap-3">
-                    <div className="text-xs text-slate-500 dark:text-slate-400">SabanOS AI • דמו חי</div>
-
-                    <div className="flex-1 space-y-2">
-                      <AnimatePresence mode="popLayout">
-                        <motion.div
-                          key={chatStep}
-                          initial={{ y: 10, opacity: 0 }}
-                          animate={{ y: 0, opacity: 1 }}
-                          exit={{ y: -10, opacity: 0 }}
-                          transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-                          className="max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-sm bg-white/90 dark:bg-zinc-700/80 text-slate-800 dark:text-slate-100"
-                        >
-                          <div className="text-[10px] opacity-75 mb-0.5">לקוח</div>
-                          <div>{chatMessage}</div>
-                          <div className="mt-0.5 text-[10px] opacity-70">10:21</div>
-                        </motion.div>
-                      </AnimatePresence>
-
-                      <div className="max-w-[85%] ml-auto rounded-2xl px-3 py-2 text-sm shadow-sm bg-emerald-500 text-white">
-                        <div className="text-[10px] opacity-75 mb-0.5">נציג</div>
-                        <div>מעולה! אפעיל לך את האוטומציות בדקות.</div>
-                        <div className="mt-0.5 text-[10px] opacity-85">10:22</div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white/70 dark:bg-zinc-800/70 rounded-xl px-3 py-2 text-sm text-slate-500 dark:text-slate-400">
-                      כתבו הודעה…
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* התראה מדומה */}
-              <AnimatePresence>
-                {isReady && (
-                  <motion.div
-                    initial={{ y: -10, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: -10, opacity: 0 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    className="absolute -top-6 right-3 bg-black text-white text-xs rounded-full px-3 py-1 shadow-xl flex items-center gap-2"
-                  >
-                    <Bell className="w-4 h-4 text-amber-400" />
-                    התקבלה הזמנה מלקוח
+            <div className="p-4 space-y-4">
+              <AnimatePresence mode="wait">
+                {chatStep === 0 && (
+                  <motion.div key="0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#1f2c34] p-2 rounded-lg text-white text-[11px] mr-auto">
+                    שלום! רוצה להפוך את העסק שלך לאוטומטי?
+                  </motion.div>
+                )}
+                {chatStep === 1 && (
+                  <motion.div key="1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#005c4b] p-2 rounded-lg text-white text-[11px] ml-auto">
+                    כן, אני רוצה לקבוע תורים בוואטסאפ.
                   </motion.div>
                 )}
               </AnimatePresence>
             </div>
           </div>
         </div>
-
-        {/* אלמנט האודיו (טעון מראש) */}
-        <audio ref={audioRef} src="/notification.mp3" preload="auto" />
       </section>
 
-      {/* טופס יצירת קשר */}
       <ContactSection />
     </main>
   );
