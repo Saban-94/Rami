@@ -2,11 +2,15 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import { db } from "../../../lib/firebase";
+
+// נתיב יחסי ל-firebase (עולה 3 רמות: מתוך trialId, מתוך chat, מתוך app)
+import { db } from "../../../lib/firebase"; 
+
 import { doc, getDoc } from "firebase/firestore";
-import { motion, AnimatePresence } from "framer-motion";
 import { Send, User, CheckCheck, Lock } from "lucide-react";
-import { processBusinessRequest } from "@/app/actions/gemini-brain";
+
+// נתיב יחסי ל-gemini-brain (עולה 2 רמות מתוך trialId ו-chat, ואז נכנס ל-actions בתוך app)
+import { processBusinessRequest } from "../../actions/gemini-brain";
 
 export default function WhatsAppChat() {
   const { trialId } = useParams();
