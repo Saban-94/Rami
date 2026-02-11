@@ -1,14 +1,18 @@
-// tailwind.config.ts
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: ["class"], // חשוב לבורר העיצוב
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  darkMode: "class", // שינוי קטן כאן מ-["class"] ל-"class" ליתר ביטחון
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx,mdx}", // הוספנו js, jsx, mdx
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}" // הוספנו גם את lib אם יש שם UI
+  ],
   theme: {
     extend: {
       colors: {
-        fluentGlass: "rgba(255, 255, 255, 0.1)",
-        fluentGlassDark: "rgba(15, 23, 42, 0.7)",
+        // העלינו את ה-opacity מ-0.1 ל-0.2 כדי שהטקסט לא ייבלע
+        fluentGlass: "rgba(255, 255, 255, 0.2)", 
+        fluentGlassDark: "rgba(15, 23, 42, 0.8)",
       },
       backdropBlur: {
         xs: "2px",
