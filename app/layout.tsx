@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+// Metadata חייב להיות רק בקובץ שרת (בלי "use client")
 export const metadata: Metadata = {
   title: "SabanOS | Business AI",
   description: "מערכת ניהול חכמה מבוססת AI",
-  manifest: "/manifest.json",
+  manifest: "/manifest.json", // גרשיים חובה!
 };
 
 export const viewport: Viewport = {
