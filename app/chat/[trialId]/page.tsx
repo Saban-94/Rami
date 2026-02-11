@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, User, CheckCheck, Lock } from "lucide-react";
 import { processBusinessRequest } from "@/app/actions/gemini-brain";
@@ -21,22 +21,27 @@ export default function WhatsAppChat() {
   useEffect(() => {
     async function checkTrial() {
       if (!trialId) return;
-      const docRef = doc(db, "trials", trialId as string);
-      const docSnap = await getDoc(docRef);
+      try {
+        const docRef = doc(db, "trials", trialId as string);
+        const docSnap = await getDoc(docRef);
 
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        const createdAt = data.createdAt.seconds * 1000;
-        const tenDaysInMs = 10 * 24 * 60 * 60 * 1000;
-        
-        if (Date.now() - createdAt > tenDaysInMs) {
-          setIsExpired(true);
-        } else {
-          setTrial(data);
-          setMessages(data.messages || []);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const createdAt = data.createdAt?.seconds ? data.createdAt.seconds * 1000 : Date.now();
+          const tenDaysInMs = 10 * 24 * 60 * 60 * 1000;
+          
+          if (Date.now() - createdAt > tenDaysInMs) {
+            setIsExpired(true);
+          } else {
+            setTrial(data);
+            setMessages(data.messages || []);
+          }
         }
+      } catch (error) {
+        console.error("Error fetching trial:", error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
     checkTrial();
   }, [trialId]);
@@ -45,16 +50,14 @@ export default function WhatsAppChat() {
     if (!input.trim()) return;
     const userMsg = { role: "user", content: input, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
     setMessages(prev => [...prev, userMsg]);
+    const currentInput = input;
     setInput("");
     setIsTyping(true);
 
     try {
-      // שליחה למוח (Gemini) עם הקשר העסק
-      const aiResponse = await processBusinessRequest(input, { name: "העסק שלך", industry: "כללי" });
+      const aiResponse = await processBusinessRequest(currentInput, { name: trial?.name || "העסק", industry: trial?.industry || "כללי" });
       const aiMsg = { role: "assistant", content: aiResponse, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) };
-      
       setMessages(prev => [...prev, aiMsg]);
-      // כאן אפשר לעדכן את ההיסטוריה ב-Firebase
     } catch (error) {
       console.error("AI Error:", error);
     } finally {
@@ -62,7 +65,9 @@ export default function WhatsAppChat() {
     }
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center dark:bg-slate-950 dark:text-white">טוען...</div>;
+  if (loading) {
+    return <div className="h-screen flex items-center justify-center dark:bg-slate-950 dark:text-white">טוען...</div>;
+  }
 
   if (isExpired) {
     return (
@@ -79,40 +84,14 @@ export default function WhatsAppChat() {
 
   return (
     <div className="h-screen flex flex-col bg-[#E5DDD5] dark:bg-slate-950 overflow-hidden" dir="rtl">
-      {/* WhatsApp Header */}
       <header className="bg-[#075E54] p-4 flex items-center gap-3 shadow-lg z-10">
         <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
           <User className="text-slate-500" />
         </div>
         <div className="flex-1">
-          <h2 className="text-white font-bold leading-tight">שירות לקוחות AI</h2>
-          <p className="text-emerald-100 text-xs">מחובר - {isTyping ? "מקליד..." : "זמין"}</p>
+          <h2 className="text-white font-bold leading-tight">{trial?.name || "שירות לקוחות AI"}</h2>
+          <p className="text-emerald-100 text-xs">{isTyping ? "מקליד..." : "זמין"}</p>
         </div>
       </header>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')] bg-repeat opacity-90">
-        <AnimatePresence>
-          {messages.map((msg, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div className={`max-w-[80%] p-3 rounded-2xl shadow-sm relative ${msg.role === "user" ? "bg-[#DCF8C6] rounded-tr-none" : "bg-white rounded-tl-none"}`}>
-                <p className="text-slate-800 text-sm leading-relaxed">{msg.content}</p>
-                <div className="flex items-center justify-end gap-1 mt-1">
-                  <span className="text-[10px] text-slate-400">{msg.time}</span>
-                  {msg.role === "user" && <CheckCheck size={12} className="text-blue-500" />}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        <div ref={scrollRef} />
-      </div>
-
-      {/* Input Area */}
-      <footer className="p-3 bg-[#F0F2F5] dark:bg-slate-900 flex items-center gap-2">
-        <input
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[url('
