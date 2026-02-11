@@ -4,16 +4,9 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, Zap, MessageCircle } from "lucide-react";
 
-// שימוש בנתיב יחסי נקי ללא המילה app - זה פותר את ה-ReferenceError
+// נתיבים יחסיים - הכי בטוח למניעת שגיאות Reference
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
-
-// הגדרת טיפוס למניעת שגיאות ב-Build
-declare global {
-  interface Window {
-    OneSignalDeferred: any;
-  }
-}
 
 export default function HomePage() {
   const [chatStep, setChatStep] = useState(0);
@@ -21,7 +14,7 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // אתחול OneSignal
+    // אתחול OneSignal בטוח בתוך הדפדפן
     if (typeof window !== "undefined") {
       const win = window as any;
       win.OneSignalDeferred = win.OneSignalDeferred || [];
@@ -63,13 +56,14 @@ export default function HomePage() {
       <Navigation />
       <audio ref={audioRef} src="/sounds/whatsapp.mp3" preload="auto" />
 
+      {/* כפתור אישור צליל והתראות */}
       {!notificationsEnabled && (
         <button
           onClick={handleEnableAll}
           className="fixed top-24 left-6 z-[50] bg-orange-500 text-white px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 border-2 border-white animate-bounce"
         >
           <Bell size={20} />
-          <span className="font-bold text-sm">הפעל צלצול והתראות</span>
+          <span className="font-bold text-sm text-white">הפעל צלצול והתראות</span>
         </button>
       )}
 
@@ -78,7 +72,7 @@ export default function HomePage() {
           <h1 className="text-6xl md:text-8xl font-black dark:text-white leading-none tracking-tighter">
             העסק שלך <br /> <span className="text-green-500">עובד בשבילך.</span>
           </h1>
-          <p className="text-xl text-slate-500 dark:text-slate-400">
+          <p className="text-xl text-slate-500 dark:text-slate-400 font-medium">
             ניהול תורים וסליקה אוטומטית בוואטסאפ - SabanOS AI.
           </p>
           <button 
@@ -98,12 +92,12 @@ export default function HomePage() {
             <div className="p-4 space-y-4">
               <AnimatePresence mode="wait">
                 {chatStep >= 0 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#1f2c34] p-2 rounded-lg text-white text-[11px] mr-auto">
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#1f2c34] p-2 rounded-lg text-white text-[11px] mr-auto shadow-sm">
                     שלום! שירה כאן. רוצה לקבוע תור?
                   </motion.div>
                 )}
                 {chatStep >= 1 && (
-                  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#005c4b] p-2 rounded-lg text-white text-[11px] ml-auto">
+                  <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#005c4b] p-2 rounded-lg text-white text-[11px] ml-auto shadow-sm">
                     כן, למחר בבוקר.
                   </motion.div>
                 )}
