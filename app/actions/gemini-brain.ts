@@ -6,37 +6,39 @@ export async function processBusinessRequest(prompt: string, businessContext: an
   const apiKey = process.env.GEMINI_API_KEY;
   
   if (!apiKey) {
-    console.error("❌ GEMINI_API_KEY Missing");
-    return "חסר מפתח AI.";
+    console.error("❌ GEMINI_API_KEY Missing in Vercel");
+    return "שגיאה: מפתח ה-AI לא הוגדר.";
   }
 
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // לפי עדכון ה-API מינואר 2026:
-    // נשתמש במודל החדש ביותר ששוחרר
+    // לפי עדכון ינואר/פברואר 2026 - חובה להשתמש בשם המלא
     const model = genAI.getGenerativeModel({ 
       model: "gemini-3-flash-preview" 
     });
 
-    const systemContext = `אתה עוזר עסקי חכם ב-SabanOS עבור ${businessContext.name || 'העסק'}. ענה בעברית קצרה ומקצועית.`;
-    
-    // שליחת התוכן בפורמט הפשוט ביותר
-    const result = await model.generateContent(`${systemContext}\n\nשאלה מהלקוח: ${prompt}`);
+    // הזרקת קונטקסט מקצועי עבור SabanOS
+    const systemPrompt = `
+      אתה עוזר עסקי חכם עבור SabanOS (מערכת של רמי).
+      העסק מתמחה באוטומציות (Make, Zapier), CRM (Monday, Pipedrive) וייעוץ טכנולוגי.
+      הלקוח פנה אליך עכשיו. ענה בעברית, קצר, מקצועי ומכירתי.
+    `;
+
+    const result = await model.generateContent(`${systemPrompt}\n\nלקוח: ${prompt}`);
     const response = await result.response;
     return response.text();
 
   } catch (error: any) {
-    console.error("❌ Gemini Error:", error.message || error);
+    console.error("❌ Gemini API Error:", error.message);
     
-    // אם ה-Preview עדיין עושה בעיות, ננסה את ה-Alias הכללי שגוגל עדכנו
+    // Fallback למודל 2.5 אם גוגל עושים בעיות ב-Gemini 3 באזור שלך
     try {
-      const genAIFallback = new GoogleGenerativeAI(apiKey);
-      const fallbackModel = genAIFallback.getGenerativeModel({ model: "gemini-flash-latest" });
+      const fallbackModel = new GoogleGenerativeAI(apiKey).getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await fallbackModel.generateContent(prompt);
       return (await result.response).text();
     } catch (inner) {
-      return "אחי, יש עדכון במערכות של גוגל. אני מתחבר מחדש, נסה שוב בעוד דקה.";
+      return "מצטער, יש עומס זמני במערכות גוגל. נסה שוב בעוד רגע.";
     }
   }
 }
