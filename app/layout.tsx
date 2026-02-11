@@ -3,8 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SabanOS | Business AI",
-  description: "ניהול עסקים חכם",
-  manifest: "/manifest.json",
+  description: "מערכת ניהול חכמה מבוססת AI",
+  manifest: "/manifest.json", // גרשיים חובה!
 };
 
 export const viewport: Viewport = {
@@ -27,9 +27,7 @@ export default function RootLayout({
           defer
         ></script>
       </head>
-      <body>
-        {children}
-      </body>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }
