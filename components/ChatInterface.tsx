@@ -43,6 +43,27 @@ const playNotification = () => {
     }
   }, [messages, isTyping]);
 
+  useEffect(() => {
+  // בקשת אישור להתראות
+  if ("Notification" in window) {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        console.log("התראות מאושרות");
+      }
+    });
+  }
+
+  // טריק "דריכת" האודיו - הדפדפן צריך אינטראקציה ראשונה
+  const unlockAudio = () => {
+    const audio = new Audio("/sounds/whatsapp.mp3");
+    audio.play().then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }).catch(() => {});
+    document.removeEventListener('click', unlockAudio);
+  };
+  document.addEventListener('click', unlockAudio);
+}, []);
   const handleSend = async () => {
     if (!input.trim() || isTyping) return;
 
