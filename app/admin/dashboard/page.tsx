@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { db } from "@/lib/firebase";
+import { db } from "../../../lib/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { Clock, Package, Calendar, Share2, ShieldCheck } from "lucide-react";
 
