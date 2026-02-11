@@ -1,20 +1,35 @@
 {
-  "name": "SabanOS AI",
+  "name": "SabanOS | Business AI",
   "short_name": "SabanOS",
+  "description": "מערכת ניהול חכמה מבוססת AI לוואטסאפ",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#075e54",
+  "orientation": "portrait",
+  "background_color": "#020617",
+  "theme_color": "#22c55e",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/5968/5968841.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "https://cdn-icons-png.flaticon.com/512/5968/5968841.png",
       "sizes": "512x512",
       "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "צ'אט עם תמיכה",
+      "url": "https://wa.me/972508861080",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/733/733585.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "קביעת תור דמו",
+      "url": "/?demo=true",
+      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3652/3652191.png", "sizes": "192x192" }]
     }
   ]
 }
