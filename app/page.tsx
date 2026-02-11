@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, Zap, MessageCircle } from "lucide-react";
+import { Bell, MessageCircle } from "lucide-react";
 
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
@@ -13,6 +13,7 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    // OneSignal init (client only)
     if (typeof window !== "undefined") {
       const win = window as any;
       win.OneSignalDeferred = win.OneSignalDeferred || [];
@@ -23,6 +24,7 @@ export default function HomePage() {
       });
     }
 
+    // Chat step rotation
     const interval = setInterval(() => {
       setChatStep((prev) => (prev < 1 ? prev + 1 : 0));
     }, 4500);
@@ -40,6 +42,7 @@ export default function HomePage() {
         })
         .catch(() => {});
     }
+
     const win = window as any;
     if (win.OneSignal) win.OneSignal.showNativePrompt();
   };
@@ -47,6 +50,8 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-white dark:bg-[#020617] text-right" dir="rtl">
       <Navigation />
+
+      {/* Sound */}
       <audio ref={audioRef} src="/sounds/whatsapp.mp3" preload="auto" />
 
       {!isReady && (
@@ -58,10 +63,12 @@ export default function HomePage() {
         </button>
       )}
 
+      {/* HERO */}
       <section className="pt-32 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
         <div className="flex-1 space-y-8">
           <h1 className="text-6xl md:text-8xl font-black dark:text-white leading-none tracking-tighter">
-            העסק שלך <br /> <span className="text-green-500">עובד בשבילך.</span>
+            העסק שלך <br />
+            <span className="text-green-500">עובד בשבילך.</span>
           </h1>
 
           <p className="text-xl text-slate-500 dark:text-slate-400">
@@ -76,6 +83,7 @@ export default function HomePage() {
           </button>
         </div>
 
+        {/* PHONE SIMULATOR */}
         <div className="flex-1 relative">
           <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-[300px] shadow-2xl bg-[#0b141a] overflow-hidden">
             <div className="bg-[#1f2c34] p-4 flex items-center gap-3">
