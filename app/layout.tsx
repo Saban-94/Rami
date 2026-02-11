@@ -1,11 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-// Metadata חייב להיות אובייקט פשוט בתוך קובץ שרת (Layout)
 export const metadata: Metadata = {
   title: "SabanOS | Business AI",
-  description: "מערכת ניהול חכמה",
-  manifest: "/manifest.json",
+  description: "מערכת ניהול חכמה מבוססת AI",
+  manifest: "/manifest.json", // וודא שקובץ זה קיים בתיקיית public
 };
 
 export const viewport: Viewport = {
@@ -17,9 +16,6 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl">
-      <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-      </head>
       <body className="antialiased">{children}</body>
     </html>
   );
