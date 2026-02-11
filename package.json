@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint"
   },
-"dependencies": {
+  "dependencies": {
     "next": "14.2.23",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -20,7 +20,7 @@
     "tailwindcss-animate": "^1.0.7",
     "next-themes": "^0.3.0",
     "tailwindcss-rtl": "^0.9.0",
-    "@google/generative-ai": "^0.21.0",
+    "@google/generative-ai": "^0.21.0"
   },
   "devDependencies": {
     "typescript": "^5",
