@@ -2,32 +2,23 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// אתחול ה-AI עם המפתח שלך
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function processBusinessRequest(prompt: string, history: any, businessContext: any) {
   try {
-    // הגדרת מזהי מודל מעודכנים לפי ינואר 2026
-    // אנחנו נשתמש ב-gemini-3-pro-preview לביצועים הכי חזקים
+    // מעבר למודל פלאש - מהיר יותר ועם מכסה חינמית גדולה בהרבה
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-3-pro-preview", 
+      model: "gemini-3-flash-preview", 
     });
 
     const bName = businessContext?.name || "SabanOS";
     const bIndustry = businessContext?.industry || "Automation";
 
     const systemInstruction = `אתה העוזר של ${bName}. התחום: ${bIndustry}. 
-    ענה תמיד בעברית טבעית, קצרה ולעניין (סגנון וואטסאפ). 
-    אל תחזור על הצהרות שירות שכבר נאמרו בשיחה. 
-    אם הלקוח משאיר פרטים, אשר שקיבלת אותם והמשך הלאה.`;
+    ענה בעברית טבעית וקצרה (סגנון וואטסאפ). אל תחזור על הצהרות שירות שכבר נאמרו.`;
 
-    // וידוא שההיסטוריה היא מערך תקין
-    let safeHistory = [];
-    if (Array.isArray(history)) {
-      safeHistory = history;
-    }
+    let safeHistory = Array.isArray(history) ? history : [];
 
-    // המרה לפורמט ה-SDK החדש
     const formattedHistory = safeHistory
       .filter((msg: any) => msg && msg.content)
       .map((msg: any) => ({
@@ -39,21 +30,19 @@ export async function processBusinessRequest(prompt: string, history: any, busin
       history: formattedHistory,
     });
 
-    // הזרקת ההוראות כחלק מההקשר (Context)
-    const finalPrompt = `[System Message: ${systemInstruction}]\n\nUser Message: ${prompt}`;
+    const finalPrompt = `[הנחיית מערכת: ${systemInstruction}]\n\nמשתמש: ${prompt}`;
 
     const result = await chat.sendMessage(finalPrompt);
     const response = await result.response;
     return response.text();
 
   } catch (error: any) {
-    console.error("Gemini 2026 API Error:", error);
+    console.error("Gemini Quota/API Error:", error);
     
-    // טיפול ספציפי בשגיאות מודל לא נמצא
-    if (error.status === 404) {
-      return "אופס, נראה שיש עדכון במערכת. אני מתחבר למודל החדש, נסה שוב בעוד רגע.";
+    if (error.status === 429) {
+      return "אופס, אני קצת עמוס כרגע. נסה שוב בעוד כמה שניות.";
     }
     
-    return "אופס, ה-AI עמוס כרגע. נסה שוב בעוד דקה.";
+    return "אופס, יש תקלה זמנית. נסה שוב בעוד דקה.";
   }
 }
