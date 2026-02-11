@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { db } from "../../../../lib/firebase";
+import { db } from "../../../lib/firebase";
 import { collection, onSnapshot, query, orderBy, doc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Users, Clock, MessageCircle, Trash2, ExternalLink, ShieldCheck, Plus, X, Copy, Check } from "lucide-react";
