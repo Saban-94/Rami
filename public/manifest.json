@@ -1,25 +1,20 @@
 {
-  "name": "SabanOS Business AI",
+  "name": "SabanOS AI",
   "short_name": "SabanOS",
-  "description": "מערכת ניהול חכמה מבוססת AI לבעלי עסקים",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#efeae2",
+  "background_color": "#ffffff",
   "theme_color": "#075e54",
-  "orientation": "portrait",
-  "scope": "/",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/5968/5968841.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "https://cdn-icons-png.flaticon.com/512/5968/5968841.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }
