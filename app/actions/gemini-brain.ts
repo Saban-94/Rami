@@ -6,35 +6,36 @@ export async function processBusinessRequest(prompt: string, businessContext: an
   const apiKey = process.env.GEMINI_API_KEY;
   
   if (!apiKey) {
-    console.error("❌ ERROR: GEMINI_API_KEY missing");
-    return "מצטער, המערכת לא מוגדרת כראוי.";
+    console.error("❌ GEMINI_API_KEY Missing");
+    return "חסר מפתח AI.";
   }
 
   try {
-    // הוספת גרסת ה-API באופן מפורש כדי לעקוף את שגיאת ה-404 של ה-v1beta
     const genAI = new GoogleGenerativeAI(apiKey);
     
-    // כאן אנחנו מגדירים את המודל בצורה הכי יציבה שיש לגרסה 0.21.0
+    // שינוי למודל gemini-pro - הוא יציב יותר בגרסאות ישנות/חדשות
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-    }, { apiVersion: 'v1' }); // <--- זה השורה שפותרת את ה-404!
+      model: "gemini-pro" 
+    });
 
-    const systemInstruction = `אתה עוזר עסקי חכם בוואטסאפ. העסק: ${businessContext.name}. תחום: ${businessContext.industry}. ענה בעברית, קצר ולעניין.`;
+    const systemContext = `אתה עוזר עסקי עבור ${businessContext.name || 'העסק'}. ענה בעברית קצרה.`;
+    const finalPrompt = `${systemContext}\n\nלקוח: ${prompt}`;
 
-    // שליחת התוכן
-    const result = await model.generateContent(`${systemInstruction}\n\nלקוח: ${prompt}`);
+    const result = await model.generateContent(finalPrompt);
     const response = await result.response;
-    const text = response.text();
+    return response.text();
 
-    return text;
   } catch (error: any) {
-    console.error("❌ Gemini API Error Details:", error);
+    console.error("❌ Gemini Error Details:", error);
     
-    // בדיקה אם זו שגיאת מפתח או שגיאת מודל
-    if (error.message?.includes("API key not valid")) {
-      return "שגיאה: מפתח ה-AI אינו תקין. בדוק את ההגדרות ב-Vercel.";
+    // אם גם פרו נכשל, ננסה את המודל הכי חדש שיש כרגע ב-API
+    try {
+        const genAIFallback = new GoogleGenerativeAI(apiKey);
+        const fallbackModel = genAIFallback.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const result = await fallbackModel.generateContent(prompt);
+        return (await result.response).text();
+    } catch (innerError) {
+        return "אופס, יש תקלה זמנית בחיבור לגוגל. נסה שוב בעוד דקה.";
     }
-    
-    return "אופס, ה-AI עמוס כרגע. נסה שוב בעוד רגע.";
   }
 }
