@@ -22,10 +22,7 @@ export default function RootLayout({
     <html lang="he" dir="rtl">
       <head>
         <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968841.png" />
-        <script 
-          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
-          defer 
-        ></script>
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
       </head>
       <body>
         {children}
