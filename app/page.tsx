@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell } from "lucide-react";
+import { Bell, Zap, MessageCircle } from "lucide-react";
 
-// שימוש בנתיבים יחסיים נקיים בלבד
+// תיקון קריטי: נתיבים יחסיים בלבד בתוך גרשיים
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
 
@@ -14,7 +14,7 @@ export default function HomePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // אתחול OneSignal בטוח
+    // אתחול בטוח של OneSignal
     if (typeof window !== "undefined") {
       const win = window as any;
       win.OneSignalDeferred = win.OneSignalDeferred || [];
@@ -27,12 +27,13 @@ export default function HomePage() {
 
     const interval = setInterval(() => {
       setChatStep((prev) => (prev < 2 ? prev + 1 : 0));
-    }, 5000);
+    }, 4500);
 
     return () => clearInterval(interval);
   }, []);
 
-  const handleStart = () => {
+  const handleActivation = () => {
+    // שחרור חסימת אודיו ו-OneSignal
     if (audioRef.current) {
       audioRef.current.play().then(() => {
         audioRef.current?.pause();
@@ -40,9 +41,7 @@ export default function HomePage() {
       }).catch(() => {});
     }
     const win = window as any;
-    if (win.OneSignal) {
-      win.OneSignal.showNativePrompt();
-    }
+    if (win.OneSignal) win.OneSignal.showNativePrompt();
   };
 
   return (
@@ -50,10 +49,11 @@ export default function HomePage() {
       <Navigation />
       <audio ref={audioRef} src="/sounds/whatsapp.mp3" preload="auto" />
 
+      {/* כפתור הפעלה - חובה לצלצול ול-PWA */}
       {!isReady && (
         <button
-          onClick={handleStart}
-          className="fixed top-24 left-6 z-[999] bg-orange-500 text-white px-6 py-3 rounded-2xl shadow-xl animate-bounce font-bold border-2 border-white"
+          onClick={handleActivation}
+          className="fixed top-24 left-6 z-[999] bg-orange-500 text-white px-6 py-3 rounded-2xl shadow-2xl animate-bounce font-bold border-2 border-white"
         >
           🔔 הפעל צליל ואפליקציה
         </button>
@@ -65,21 +65,22 @@ export default function HomePage() {
             העסק שלך <br /> <span className="text-green-500">עובד בשבילך.</span>
           </h1>
           <p className="text-xl text-slate-500 dark:text-slate-400">
-            SabanOS AI - ניהול תורים וסליקה אוטומטית בוואטסאפ.
+             ניהול תורים וסליקה אוטומטית בוואטסאפ - SabanOS AI.
           </p>
           <button 
             onClick={() => window.open("https://wa.me/972508861080")}
-            className="px-12 py-6 bg-green-500 text-black font-black rounded-3xl text-2xl shadow-xl"
+            className="px-12 py-6 bg-green-500 text-black font-black rounded-3xl text-2xl shadow-xl hover:scale-105 transition-all"
           >
             קבל 15% הנחה עכשיו
           </button>
         </div>
 
+        {/* iPHONE SIMULATOR */}
         <div className="flex-1 relative">
           <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-[300px] shadow-2xl bg-[#0b141a] overflow-hidden">
             <div className="bg-[#1f2c34] p-4 flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-[10px] font-bold">AI</div>
-              <div className="text-white text-xs font-bold font-sans">SabanOS AI</div>
+              <div className="text-white text-xs font-bold">SabanOS AI</div>
             </div>
             <div className="p-4 space-y-4">
               <AnimatePresence mode="wait">
