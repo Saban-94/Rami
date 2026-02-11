@@ -17,16 +17,24 @@ export default function ChatInterface() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // --- פונקציית הסאונד החדשה ---
-  const playNotification = () => {
-    try {
-      // הנתיב לקובץ שהעלית לתיקיית public/sounds
-      const audio = new Audio("/sounds/whatsapp.mp3");
-      audio.volume = 0.6; // ווליום מאוזן
-      audio.play().catch(err => console.log("Audio blocked by browser. User must interact first."));
-    } catch (e) {
-      console.error("Error playing sound:", e);
+const playNotification = () => {
+  try {
+    // הוספת Timestamp כדי למנוע מהדפדפן לשמור גרסה ישנה (Cache)
+    const audio = new Audio(`/sounds/whatsapp.mp3?v=${Date.now()}`);
+    audio.volume = 0.8; 
+    
+    const playPromise = audio.play();
+
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        // כאן הדפדפן חוסם סאונד כי עוד לא הייתה אינטראקציה
+        console.log("דפדפן חסם סאונד אוטומטי. המתן ללחיצה ראשונה של המשתמש.");
+      });
     }
-  };
+  } catch (e) {
+    console.error("שגיאה בהפעלת סאונד:", e);
+  }
+};
 
   // גלילה אוטומטית למטה בכל הודעה חדשה
   useEffect(() => {
