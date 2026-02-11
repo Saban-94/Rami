@@ -3,8 +3,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SabanOS | Business AI",
-  description: "מערכת ניהול חכמה מבוססת AI",
-  manifest: "/manifest.json", // גרשיים חובה!
+  description: "ניהול עסקים חכם",
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
@@ -22,12 +22,13 @@ export default function RootLayout({
     <html lang="he" dir="rtl">
       <head>
         <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/5968/5968841.png" />
+        {/* שימוש ב-Script של Next.js לטעינה בטוחה */}
         <script 
           src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
           defer
         ></script>
       </head>
-      <body className="antialiased">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }
