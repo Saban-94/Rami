@@ -1,13 +1,14 @@
 "use client";
 
-export const dynamic = "force-dynamic"; // ⬅⬅⬅ קשיח ל-client בלבד
+export const dynamic = "force-dynamic";
 
 import React, { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
+import dynamicImport from "next/dynamic"; // ← לא מתנגש בשם
+
 import Navigation from "../../components/Navigation";
 
 // טעינת טופס רק בצד לקוח
-const DynamicForm = dynamic(
+const DynamicForm = dynamicImport(
   () => import("../../components/TrialRegistrationForm"),
   { ssr: false }
 );
