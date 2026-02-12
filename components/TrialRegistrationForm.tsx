@@ -36,16 +36,22 @@ export default function TrialRegistrationForm() {
     setLoading(true);
 
     try {
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 10);
+      // בתוך פונקציית ה-handleSubmit
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!db) {
+    console.error("Firebase not initialized");
+    return;
+  }
 
-      const docRef = await addDoc(collection(db, "trials"), {
-        ...formData,
-        status: "active",
-        createdAt: serverTimestamp(),
-        trialEndDate: trialEndDate,
-        trialDays: 10
-      });
+  setLoading(true);
+  try {
+    // ... הקוד הקיים שלך ...
+  } catch (err) {
+    // ...
+  }
+};
 
       window.location.href = `/chat/${docRef.id}`;
     } catch (error) {
