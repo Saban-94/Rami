@@ -1,10 +1,12 @@
 "use client";
 
+export const dynamic = "force-dynamic"; // ⬅⬅⬅ קשיח ל-client בלבד
+
 import React, { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Navigation from "../../components/Navigation";
 
-// בידוד הטופס - לא ירונדר בשרת בכלל
+// טעינת טופס רק בצד לקוח
 const DynamicForm = dynamic(
   () => import("../../components/TrialRegistrationForm"),
   { ssr: false }
@@ -17,7 +19,8 @@ export default function TrialPage() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return <div className="min-h-screen bg-[#020617]" />;
+  if (!mounted)
+    return <div className="min-h-screen bg-[#020617]" />;
 
   return (
     <main className="min-h-screen bg-[#020617] text-white" dir="rtl">
