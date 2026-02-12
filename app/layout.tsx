@@ -4,7 +4,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SabanOS | Business AI",
   description: "מערכת ניהול חכמה מבוססת AI",
-  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
