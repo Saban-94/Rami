@@ -1,7 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,17 +10,11 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// פונקציית עזר לאתחול בטוח
-function getFirebaseApp() {
-  if (typeof window === "undefined") return null; // הגנה לזמן ה-Build
-  if (getApps().length > 0) return getApp();
-  return initializeApp(firebaseConfig);
-}
+// אתחול בטוח - מחזיר null בשרת
+const app = typeof window !== "undefined" 
+  ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
+  : null;
 
-const app = getFirebaseApp();
+const db = app ? getFirestore(app) : null;
 
-// ייצוא פונקציות במקום אובייקטים קבועים (מונע שגיאות Reference בשרת)
-export const db = app ? getFirestore(app) : null;
-export const auth = app ? getAuth(app) : null;
-export const storage = app ? getStorage(app) : null;
-export { app };
+export { app, db };
