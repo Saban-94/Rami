@@ -12,14 +12,17 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// אתחול בטוח: רק אם אנחנו בדפדפן ואין אפליקציה קיימת
-let app;
-if (typeof window !== "undefined") {
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+// פונקציית עזר לאתחול בטוח
+function getFirebaseApp() {
+  if (typeof window === "undefined") return null; // הגנה לזמן ה-Build
+  if (getApps().length > 0) return getApp();
+  return initializeApp(firebaseConfig);
 }
 
-const db = app ? getFirestore(app) : null;
-const auth = app ? getAuth(app) : null;
-const storage = app ? getStorage(app) : null;
+const app = getFirebaseApp();
 
-export { app, db, auth, storage };
+// ייצוא פונקציות במקום אובייקטים קבועים (מונע שגיאות Reference בשרת)
+export const db = app ? getFirestore(app) : null;
+export const auth = app ? getAuth(app) : null;
+export const storage = app ? getStorage(app) : null;
+export { app };
