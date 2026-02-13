@@ -1,7 +1,6 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCJtctJALFhWbYXQSeGaT-0Ewr_aONZhaU",
@@ -13,14 +12,12 @@ const firebaseConfig = {
   measurementId: "G-DRH16ZP7S1"
 };
 
-// אתחול אפליקציה - הגנה מוחלטת מפני ריצה בשרת (Build time)
+// אתחול אפליקציה - הגנה מוחלטת: בשרת הכל יהיה null
 const app = typeof window !== "undefined" 
   ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
   : null;
 
-// ייצוא שירותים בצורה בטוחה
 export const db = app ? getFirestore(app) : null;
 export const auth = app ? getAuth(app) : null;
-export const storage = app ? getStorage(app) : null;
 
 export { app };
