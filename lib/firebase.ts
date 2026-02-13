@@ -1,6 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -11,11 +10,10 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-// אתחול בטוח לשימוש ב-Vercel (SSR Safe)
+// אתחול שקורה רק אם אנחנו בדפדפן
 const app = typeof window !== "undefined" 
   ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
   : null;
 
 export const db = app ? getFirestore(app) : null;
-export const auth = app ? getAuth(app) : null;
 export { app };
