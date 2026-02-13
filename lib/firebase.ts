@@ -12,12 +12,12 @@ const firebaseConfig = {
   measurementId: "G-DRH16ZP7S1"
 };
 
-// אתחול אפליקציה - הגנה מוחלטת: בשרת הכל יהיה null
-const app = typeof window !== "undefined" 
-  ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
-  : null;
+// אתחול עצלני - קורה רק כשקוראים למי מהפונקציות ורק בדפדפן
+const getFirebaseApp = () => {
+  if (typeof window === "undefined") return null;
+  return getApps().length ? getApp() : initializeApp(firebaseConfig);
+};
 
-export const db = app ? getFirestore(app) : null;
-export const auth = app ? getAuth(app) : null;
-
-export { app };
+export const db = typeof window !== "undefined" ? getFirestore(getFirebaseApp()!) : null;
+export const auth = typeof window !== "undefined" ? getAuth(getFirebaseApp()!) : null;
+export const app = getFirebaseApp();
