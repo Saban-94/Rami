@@ -1,4 +1,3 @@
-// lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -13,7 +12,7 @@ const firebaseConfig = {
   measurementId: "G-DRH16ZP7S1"
 };
 
-// אתחול עצלני ובטוח - מונע ReferenceError: app is not defined
+// אתחול בטוח - בשרת זה יחזיר null ולא יפיל את הבילד
 const app = typeof window !== "undefined" 
   ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
   : null;
