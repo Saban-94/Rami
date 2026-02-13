@@ -1,3 +1,4 @@
+// lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -12,12 +13,11 @@ const firebaseConfig = {
   measurementId: "G-DRH16ZP7S1"
 };
 
-// אתחול עצלני - קורה רק כשקוראים למי מהפונקציות ורק בדפדפן
-const getFirebaseApp = () => {
-  if (typeof window === "undefined") return null;
-  return getApps().length ? getApp() : initializeApp(firebaseConfig);
-};
+// אתחול עצלני ובטוח - מונע ReferenceError: app is not defined
+const app = typeof window !== "undefined" 
+  ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
+  : null;
 
-export const db = typeof window !== "undefined" ? getFirestore(getFirebaseApp()!) : null;
-export const auth = typeof window !== "undefined" ? getAuth(getFirebaseApp()!) : null;
-export const app = getFirebaseApp();
+export const db = app ? getFirestore(app) : null;
+export const auth = app ? getAuth(app) : null;
+export { app };
