@@ -1,317 +1,205 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { db } from "../../../lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import Navigation from "../../../components/Navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { "use client";
+import { 
+  Smartphone, Layout, Sparkles, Rocket, Lock, 
+  Scissors, Stethoscope, Coffee, Layers, Sun, Moon 
+} from "lucide-react";
+import { format, addDays, startOfDay, isSameDay } from "date-fns";
+import { he } from "date-fns/locale";
 
-import React, { useState, useEffect } from "react";
-import { db } from "../../../lib/firebase"; // וודא שהקובץ הזה תקין
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
-import { motion, AnimatePresence } from "framer-motion";
+const CATEGORIES = [
+  { id: 'barber', name: 'יופי וטיפוח', icon: <Scissors size={18}/>, tools: ['תורים', 'גלריה', 'צוות'] },
+  { id: 'retail', name: 'חנויות וסלולר', icon: <Smartphone size={18}/>, tools: ['קטלוג', 'מעבדה', 'מלאי'] },
+  { id: 'medical', name: 'רפואה וקליניקות', icon: <Stethoscope size={18}/>, tools: ['תיקים רפואיים', 'תורים'] },
+];
 
-export default function SabanOSV3Studio({ params }: { params: { trialId: string } }) {
+export default function SabanOSProductionStudio({ params }: { params: { trialId: string } }) {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [inputCode, setInputCode] = useState("");
   const [businessData, setBusinessData] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [permissionError, setPermissionError] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  // --- 1. OneSignal Fix ---
+  // --- 1. OneSignal Fix (Safe Initialization) ---
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const OneSignal = (window as any).OneSignal;
-      if (OneSignal) {
-        OneSignal.push(async () => {
-          await OneSignal.init({
-            appId: "767878273802-1p5oifchiurnkhv9g4dfosn26snseh30",
-            allowLocalhostAsSecureOrigin: true,
-          });
-        });
-      }
+      const initOneSignal = async () => {
+        const OneSignal = (window as any).OneSignal;
+        if (OneSignal) {
+          try {
+            await OneSignal.push(() => {
+              // בדיקה שה-SDK מוכן וקיים אובייקט Notifications
+              if (OneSignal.Notifications) {
+                OneSignal.init({
+                  appId: "767878273802-1p5oifchiurnkhv9g4dfosn26snseh30", 
+                  allowLocalhostAsSecureOrigin: true,
+                });
+              }
+            });
+          } catch (e) {
+            console.error("OneSignal push error:", e);
+          }
+        }
+      };
+      initOneSignal();
     }
   }, []);
 
-  // --- 2. Firestore Realtime Fix ---
+  // --- 2. Firestore Sync with Permission Handling ---
   useEffect(() => {
-    if (!params.trialId) return;
+    if (!params.trialId || !db) {
+      setLoading(false);
+      return;
+    }
 
-    // שימוש ב-onSnapshot להאזנה חיה, עם טיפול בשגיאות
     const unsub = onSnapshot(
       doc(db, "trials", params.trialId),
       (snap) => {
         if (snap.exists()) {
           setBusinessData(snap.data());
-        } else {
-          setError("Trial not found");
+          setPermissionError(false);
         }
+        setLoading(false);
       },
-      (err) => {
-        console.error("Firestore Sync Error:", err);
-        setError("שגיאת סנכרון נתונים");
+      (error) => {
+        console.error("Firebase Sync Error:", error);
+        if (error.code === 'permission-denied') {
+          setPermissionError(true);
+        }
+        setLoading(false);
       }
     );
 
     return () => unsub();
   }, [params.trialId]);
 
-  if (error) return <div className="p-20 text-red-500 font-bold">{error}</div>;
-
-  return (
-    <div className="min-h-screen bg-[#0C0C0D] text-white p-12">
-      <AnimatePresence>
-        {businessData ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <h1 className="text-4xl font-black italic">{businessData.businessName}</h1>
-            <p className="opacity-50 mt-2">SabanOS Studio v3.0 | Live Mode</p>
-          </motion.div>
-        ) : (
-          <div className="animate-pulse">טוען נתונים...</div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-  Smartphone, Layout, Sparkles, Rocket, 
-  Check, ChevronLeft, Calendar, Clock, Lock, 
-  Sun, Moon, Coffee, BookOpen, Scissors, 
-  Stethoscope, Briefcase, ChevronRight, Settings, Layers
-} from "lucide-react";
-import { format, addDays, isSameDay, startOfDay } from "date-fns";
-import { he } from "date-fns/locale";
-
-// --- Configuration & Vertical Mapping ---
-const CATEGORIES = [
-  { id: 'barber', name: 'יופי וטיפוח', icon: <Scissors size={18}/>, tools: ['תורים', 'גלריה', 'צוות'] },
-  { id: 'food', name: 'מזון ומשקאות', icon: <Coffee size={18}/>, tools: ['תפריט', 'משלוחים', 'מבצעים'] },
-  { id: 'retail', name: 'חנויות וסלולר', icon: <Smartphone size={18}/>, tools: ['קטלוג', 'מעבדה', 'מלאי'] },
-  { id: 'medical', name: 'רפואה וקליניקות', icon: <Stethoscope size={18}/>, tools: ['תיקים רפואיים', 'תורים', 'מרשמים'] },
-];
-
-export default function SabanOSProductionStudio({ params }: { params: { trialId: string } }) {
-  // --- States ---
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [inputCode, setInputCode] = useState("");
-  const [businessData, setBusinessData] = useState<any>(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const [loading, setLoading] = useState(true);
-  const [selectedCat, setSelectedCat] = useState(CATEGORIES[0]);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [aiCanvasText, setAiCanvasText] = useState("");
-  const [currentLang, setCurrentLang] = useState<"he" | "ar" | "en">("he");
-
-useEffect(() => {
-  if (typeof window !== "undefined") {
-    const initOneSignal = async () => {
-      const OneSignal = (window as any).OneSignal;
-      if (OneSignal) {
-        await OneSignal.push(() => {
-          // בדיקה שהאובייקט Notifications קיים לפני שימוש ב-on
-          if (OneSignal.Notifications) {
-            OneSignal.Notifications.addEventListener("foregroundWillDisplay", (event: any) => {
-              console.log("Notification received in foreground:", event);
-            });
-          }
-          
-          OneSignal.init({
-            appId: "767878273802-1p5oifchiurnkhv9g4dfosn26snseh30", // ה-App ID שלך
-            allowLocalhostAsSecureOrigin: true,
-          });
-        });
-      }
-    };
-    initOneSignal();
-  }
-}, []);
-
-  // --- Initial Data Fetch ---
-  useEffect(() => {
-    const fetchDoc = async () => {
-      try {
-        const docRef = doc(db, "trials", params.trialId);
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          setBusinessData(data);
-          const matchedCat = CATEGORIES.find(c => c.id === data.industry) || CATEGORIES[0];
-          setSelectedCat(matchedCat);
-        }
-      } catch (err) { console.error("Firebase Error:", err); }
-      setLoading(false);
-    };
-    fetchDoc();
-  }, [params.trialId]);
-
-  // --- AI Logic ---
-  const typeToCanvas = (text: string) => {
-    setAiCanvasText("");
-    let i = 0;
-    const interval = setInterval(() => {
-      setAiCanvasText((prev) => prev + text.charAt(i));
-      i++;
-      if (i >= text.length) clearInterval(interval);
-    }, 20);
-  };
-
   const handleVerify = () => {
     if (inputCode === businessData?.accessCode) {
       setIsAuthorized(true);
-      typeToCanvas(`SabanOS v3.0 Production Ready. שלום ${businessData?.businessName}. המוח מלוטש וממתין לפקודה.`);
     } else {
       alert("קוד גישה שגוי");
     }
   };
 
-  // --- Confetti Success Logic (Dynamic Import for Vercel) ---
-  const triggerSuccess = async () => {
-    setIsSuccess(true);
-    try {
-      const confetti = (await import("canvas-confetti")).default;
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#22c55e', '#ffffff', '#fbbf24']
-      });
-    } catch (e) {}
-    typeToCanvas("הצלחה! התור שוריין, הודעת אישור נשלחה ללקוח והסתנכרנה ליומן הגוגל שלך.");
-  };
-
   const weekDays = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(startOfDay(new Date()), i)), []);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0C0C0D] text-green-500 font-black text-2xl animate-pulse italic">SABANOS STUDIO LOADING...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0C0C0D] text-green-500 font-black animate-pulse uppercase italic">SabanOS Loading...</div>;
+
+  if (permissionError) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center p-6 text-center" dir="rtl">
+        <div className="max-w-md p-10 bg-red-500/10 border border-red-500/30 rounded-[3rem]">
+          <h1 className="text-2xl font-black text-red-500 mb-4">חסרות הרשאות אבטחה</h1>
+          <p className="opacity-70 mb-8">יש לעדכן את ה-Rules ב-Firebase Console כדי לאפשר קריאה מהקולקציה trials.</p>
+          <button onClick={() => window.location.reload()} className="px-8 py-3 bg-red-500 text-white rounded-2xl font-bold">נסה שוב</button>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthorized) {
     return (
       <div className="min-h-screen bg-[#0C0C0D] flex items-center justify-center p-4">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/5 border border-white/10 p-12 rounded-[4rem] max-w-md w-full text-center shadow-2xl backdrop-blur-3xl">
-          <div className="w-24 h-24 bg-green-600 rounded-[2.5rem] mx-auto mb-8 flex items-center justify-center text-white shadow-xl shadow-green-600/20"><Lock size={40} /></div>
-          <h2 className="text-3xl font-black mb-6 italic tracking-tighter uppercase">Studio Access</h2>
-          <input type="password" maxLength={4} value={inputCode} onChange={(e) => setInputCode(e.target.value)} className="w-full bg-black/40 border-2 border-white/10 rounded-3xl p-6 text-center text-4xl tracking-[15px] text-green-600 outline-none focus:border-green-500 mb-8" placeholder="****" />
-          <button onClick={handleVerify} className="w-full bg-green-600 text-white font-black py-5 rounded-3xl text-xl shadow-lg hover:bg-green-700 transition-all uppercase">Open Diamond Studio</button>
+          <div className="w-20 h-20 bg-green-600 rounded-[2rem] mx-auto mb-8 flex items-center justify-center text-white shadow-xl shadow-green-600/20"><Lock size={32} /></div>
+          <h2 className="text-2xl font-black mb-6 italic tracking-tighter uppercase text-white">Access SabanOS</h2>
+          <input 
+            type="password" 
+            maxLength={4} 
+            value={inputCode} 
+            onChange={(e) => setInputCode(e.target.value)} 
+            className="w-full bg-black/40 border-2 border-white/10 rounded-3xl p-6 text-center text-4xl tracking-[15px] text-green-600 outline-none focus:border-green-500 mb-8" 
+            placeholder="****" 
+          />
+          <button onClick={handleVerify} className="w-full bg-green-600 text-white font-black py-5 rounded-3xl text-xl hover:bg-green-700 transition-all">ENTER STUDIO</button>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <main className={`min-h-screen ${isDarkMode ? 'bg-[#0C0C0D] text-white' : 'bg-slate-50 text-slate-900'} transition-colors duration-500 font-sans`} dir={currentLang === 'en' ? 'ltr' : 'rtl'}>
+    <main className={`min-h-screen ${isDarkMode ? 'bg-[#0C0C0D] text-white' : 'bg-slate-50 text-slate-900'} transition-colors duration-500`} dir="rtl">
       <Navigation />
       
-      <div className="pt-28 px-8 max-w-[1900px] mx-auto pb-10 grid grid-cols-1 lg:grid-cols-12 gap-10 h-[calc(100vh-120px)]">
+      <div className="pt-28 px-8 max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10">
         
-        {/* --- 1. Vertical Sidebar (Contextual) --- */}
-        <aside className="lg:col-span-3 space-y-6 overflow-y-auto no-scrollbar">
-          <div className="bg-white/5 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-[3.5rem] p-8 shadow-sm backdrop-blur-xl">
-            <h2 className="text-xl font-black italic mb-8 flex items-center gap-3">
-              <Layout size={20} className="text-green-500" /> ניהול {selectedCat.name}
+        {/* Sidebar */}
+        <aside className="lg:col-span-3 space-y-6">
+          <div className="bg-white/5 border border-white/10 rounded-[3rem] p-8 backdrop-blur-xl">
+            <h2 className="text-xl font-black italic mb-6 flex items-center gap-3">
+              <Layout size={20} className="text-green-500" /> ניהול עסק
             </h2>
-            <div className="space-y-2">
-              {selectedCat.tools.map((tool) => (
-                <button key={tool} className="w-full p-5 rounded-[2rem] bg-white/5 border border-transparent hover:border-green-500/30 flex items-center justify-between group transition-all">
-                  <span className="font-bold italic text-sm">{tool}</span>
-                  <Layers size={14} className="opacity-20 group-hover:opacity-100" />
-                </button>
-              ))}
+            <div className="space-y-3">
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                <p className="text-[10px] uppercase opacity-40 font-black mb-1">שם העסק</p>
+                <p className="font-bold">{businessData?.businessName}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                <p className="text-[10px] uppercase opacity-40 font-black mb-1">סטטוס סטודיו</p>
+                <p className="text-green-500 font-bold flex items-center gap-2">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> Live & Syncing
+                </p>
+              </div>
             </div>
           </div>
           
-          <div className="flex gap-4">
-             <button onClick={() => setIsDarkMode(!isDarkMode)} className="flex-1 py-6 bg-slate-900 dark:bg-white text-white dark:text-black rounded-[2.5rem] font-black text-xs shadow-xl flex items-center justify-center gap-2">
-                {isDarkMode ? <Sun size={16}/> : <Moon size={16}/>} THEME
-             </button>
-             <select 
-               value={currentLang} 
-               onChange={(e: any) => setCurrentLang(e.target.value)}
-               className="flex-1 py-6 bg-green-600 text-white rounded-[2.5rem] font-black text-xs text-center outline-none appearance-none cursor-pointer"
-             >
-               <option value="he">עברית</option>
-               <option value="ar">العربية</option>
-               <option value="en">English</option>
-             </select>
-          </div>
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-full py-6 bg-white/5 border border-white/10 text-white rounded-[2rem] font-black text-xs flex items-center justify-center gap-2">
+            {isDarkMode ? <Sun size={16}/> : <Moon size={16}/>} TOGGLE THEME
+          </button>
         </aside>
 
-        {/* --- 2. Diamond Preview (iPhone Canvas) --- */}
-        <div className="lg:col-span-5 flex flex-col items-center justify-center relative bg-slate-200/10 dark:bg-white/5 rounded-[5rem] border border-dashed border-white/10">
-          <div className="w-[360px] h-[740px] bg-black rounded-[4rem] border-[10px] border-slate-900 shadow-[0_0_80px_rgba(0,0,0,0.4)] relative overflow-hidden ring-1 ring-white/20">
+        {/* iPhone Preview Canvas */}
+        <div className="lg:col-span-5 flex justify-center py-10 bg-white/5 rounded-[4rem] border border-dashed border-white/10">
+          <div className="w-[360px] h-[740px] bg-black rounded-[4rem] border-[10px] border-slate-900 shadow-2xl relative overflow-hidden ring-1 ring-white/20">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-3xl z-50" />
             
-            <div className={`w-full h-full p-8 pt-16 transition-all duration-700 overflow-y-auto ${isDarkMode ? 'bg-[#0b141a]' : 'bg-white'}`}>
-              <div className="text-center mb-10">
-                <h3 className={`text-3xl font-black italic ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{businessData?.businessName}</h3>
-                <div className="w-12 h-1 bg-green-500 mx-auto mt-2 rounded-full" />
-              </div>
+            <div className={`w-full h-full p-8 pt-16 overflow-y-auto ${isDarkMode ? 'bg-[#0b141a]' : 'bg-white'}`}>
+              <h3 className={`text-2xl font-black italic text-center mb-8 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                {businessData?.businessName}
+              </h3>
 
-              {/* Weekly Picker */}
+              {/* Day Picker */}
               <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar mb-8">
                 {weekDays.map(d => (
                   <button key={d.toISOString()} onClick={() => setSelectedDate(d)} 
-                    className={`min-w-[60px] py-4 rounded-2xl border transition-all ${isSameDay(d, selectedDate) ? 'bg-green-600 text-white border-green-500 shadow-lg' : 'bg-slate-50 dark:bg-white/5 text-slate-400 border-transparent'}`}>
-                    <span className="text-[10px] block font-bold">{format(d, "EEE", { locale: currentLang === 'ar' ? undefined : he })}</span>
+                    className={`min-w-[55px] py-4 rounded-2xl border transition-all ${isSameDay(d, selectedDate) ? 'bg-green-600 text-white border-green-500' : 'bg-white/5 text-slate-400 border-transparent'}`}>
+                    <span className="text-[10px] block font-bold">{format(d, "EEE", { locale: he })}</span>
                     <span className="text-lg font-black">{format(d, "d")}</span>
                   </button>
                 ))}
               </div>
 
-              {/* Time Grid with Pulse on first slot */}
-              <div className="grid grid-cols-3 gap-3 mb-10">
-                {["09:00", "10:00", "11:00", "12:00", "15:00", "17:00"].map((t, idx) => (
+              {/* Time Slots */}
+              <div className="grid grid-cols-3 gap-3">
+                {["09:00", "10:30", "12:00", "14:30", "16:00", "17:30"].map((t) => (
                   <button key={t} onClick={() => setSelectedSlot(t)} 
-                    className={`py-4 rounded-2xl text-xs font-black border transition-all relative ${selectedSlot === t ? 'bg-slate-900 dark:bg-white text-white dark:text-black scale-105 shadow-xl' : 'bg-white/50 dark:bg-white/5 border-slate-100 dark:border-white/5'}`}>
+                    className={`py-4 rounded-2xl text-xs font-black transition-all ${selectedSlot === t ? 'bg-white text-black scale-105 shadow-xl' : 'bg-white/5 border border-white/5 text-slate-400'}`}>
                     {t}
-                    {idx === 0 && !selectedSlot && <span className="absolute inset-0 rounded-2xl bg-green-500/20 animate-ping pointer-events-none" />}
                   </button>
                 ))}
               </div>
-
-              <motion.button 
-                disabled={!selectedSlot || isSuccess} 
-                onClick={triggerSuccess}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className={`w-full py-5 rounded-[2rem] font-black text-lg transition-all ${selectedSlot && !isSuccess ? 'bg-green-600 text-white shadow-2xl shadow-green-600/30' : 'bg-slate-200 text-slate-400'}`}
-              >
-                {isSuccess ? 'שוריין בהצלחה!' : `קבע ל-${selectedSlot || '...'}`}
-              </motion.button>
-            </div>
-          </div>
-          {/* Success Confetti overlay logic handled dynamically */}
-        </div>
-
-        {/* --- 3. AI Designer (The Mentor) --- */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
-          <div className="bg-white dark:bg-white/5 border border-white/10 rounded-[4rem] p-10 flex-1 flex flex-col shadow-2xl relative overflow-hidden backdrop-blur-3xl">
-            <div className="flex items-center gap-4 mb-10">
-              <div className="w-14 h-14 bg-green-500 rounded-[1.5rem] flex items-center justify-center text-white shadow-lg shadow-green-500/20"><Sparkles size={24} /></div>
-              <div>
-                <h2 className="text-2xl font-black italic tracking-tighter uppercase leading-none">AI Designer</h2>
-                <div className="flex items-center gap-2 mt-1"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /><p className="text-[10px] text-green-600 font-black uppercase tracking-widest">Mentor Active</p></div>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto mb-8 custom-scrollbar">
-              <AnimatePresence>
-                {aiCanvasText && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-8 bg-green-500/5 border-r-4 border-green-600 rounded-l-[3rem] shadow-inner">
-                    <p className="text-xl font-bold leading-relaxed text-green-700 dark:text-green-400 italic">{aiCanvasText}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            <div className="relative group">
-              <textarea 
-                placeholder="תכתוב ל-AI: 'תעצב לי דף קטלוג יוקרתי'..." 
-                className="w-full h-32 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-6 text-sm outline-none focus:ring-2 ring-green-500 transition-all resize-none shadow-inner" 
-              />
-              <button className="absolute bottom-4 left-4 p-4 bg-green-600 text-white rounded-2xl shadow-xl hover:scale-110 transition-all active:scale-95">
-                <Rocket size={20}/>
-              </button>
             </div>
           </div>
         </div>
+
+        {/* AI Designer Side */}
+        <aside className="lg:col-span-4 bg-green-600/5 border border-green-600/10 rounded-[4rem] p-10 backdrop-blur-3xl">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center text-white"><Sparkles size={20} /></div>
+            <h2 className="text-2xl font-black italic uppercase italic">AI Designer</h2>
+          </div>
+          <div className="p-6 bg-white/5 border border-white/10 rounded-[2rem] text-sm leading-relaxed font-bold italic opacity-80">
+            "שלום רמי, הסטודיו מסונכרן בשידור חי ל-Firestore. כל שינוי ב-Rules ישפיע מיידית על הממשק כאן."
+          </div>
+        </aside>
 
       </div>
     </main>
