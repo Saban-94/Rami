@@ -12,11 +12,10 @@ const firebaseConfig = {
   measurementId: "G-DRH16ZP7S1"
 };
 
-// אתחול בטוח - בשרת זה יחזיר null ולא יפיל את הבילד
-const app = typeof window !== "undefined" 
-  ? (getApps().length === 0 ? initializeApp(firebaseConfig) : getApp())
-  : null;
+// אתחול Singleton שתואם גם לשרת וגם ללקוח
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-export const db = app ? getFirestore(app) : null;
-export const auth = app ? getAuth(app) : null;
+// ייצוא השירותים ללא בדיקת null, כדי שהם יהיו זמינים תמיד
+export const db = getFirestore(app);
+export const auth = getAuth(app);
 export { app };
