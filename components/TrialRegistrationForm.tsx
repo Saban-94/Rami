@@ -33,27 +33,29 @@ export default function TrialRegistrationForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // בדיקה ש-Firebase אכן מחובר
+    if (!db) {
+      console.error("Firebase not initialized");
+      alert("שגיאת מערכת: חיבור הנתונים לא פעיל.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // בתוך פונקציית ה-handleSubmit
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  if (!db) {
-    console.error("Firebase not initialized");
-    return;
-  }
+      // יצירת המסמך ב-Firestore והגדרת docRef בצורה תקינה
+      const docRef = await addDoc(collection(db, "trials"), {
+        ...formData,
+        status: "active",
+        createdAt: serverTimestamp(),
+      });
 
-  setLoading(true);
-  try {
-    // ... הקוד הקיים שלך ...
-  } catch (err) {
-    // ...
-  }
-};
-
+      console.log("Success! ID:", docRef.id);
+      
+      // העברה לדף הצ'אט עם ה-ID החדש שנוצר
       window.location.href = `/chat/${docRef.id}`;
+      
     } catch (error) {
       console.error("Error adding document: ", error);
       alert("משהו השתבש ברישום, נסה שנית.");
