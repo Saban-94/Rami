@@ -1,4 +1,5 @@
 // lib/bus.ts
+
 export type BusEvent =
   | { type: "STAGED_PATCH_SET"; patch: any[] }
   | { type: "STAGED_PATCH_CLEAR" }
@@ -9,14 +10,14 @@ export class NileBus {
   private ch: BroadcastChannel | null = null;
 
   constructor(name = "nile-bus") {
-    // בדיקה קריטית: האם אנחנו בשרת או בדפדפן?
+    // בדיקת הגנה: רק אם אנחנו בדפדפן (Client-side)
     if (typeof window !== "undefined") {
       this.ch = new BroadcastChannel(name);
     }
   }
 
   post(e: BusEvent) {
-    if (!this.ch) return; // לא עושים כלום בשרת
+    if (!this.ch) return;
     this.ch.postMessage(e);
   }
 
