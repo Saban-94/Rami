@@ -8,8 +8,8 @@ import ChatInterface from "../../../components/ChatInterface";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Brain, Calendar, Save, Plus, Sun, Moon, 
-  MessageSquare, UserPlus, Share2, Trash2, 
-  User, Smartphone, Activity, Sparkles, TrendingUp, Users, Clock, Lock
+  MessageSquare, UserPlus, Share2, Activity, 
+  Sparkles, TrendingUp, Users, Lock, Clock, Paperclip 
 } from "lucide-react";
 
 export default function SabanOSStudio({ params }: { params: { trialId: string } }) {
@@ -20,22 +20,44 @@ export default function SabanOSStudio({ params }: { params: { trialId: string } 
   const [aiCanvasText, setAiCanvasText] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
-  
-  const [newCustomer, setNewCustomer] = useState({ name: "", phone: "", service: "תספורת" });
+  const [newCustomer, setNewCustomer] = useState({ name: "", phone: "" });
   const [isAddingCustomer, setIsAddingCustomer] = useState(false);
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // אתחול בטוח של אודיו
+    if (typeof window !== "undefined") {
+      audioRef.current = new Audio("/sounds/whatsapp.mp3");
+    }
+
     const fetchDoc = async () => {
-      const docRef = doc(db, "trials", params.trialId);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        setBusinessData(data);
-        setExtraContext(data.businessContext || "");
+      try {
+        const docRef = doc(db, "trials", params.trialId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          setBusinessData(data);
+          setExtraContext(data.businessContext || "");
+        }
+      } catch (err) {
+        console.error("Firebase Error:", err);
       }
       setLoading(false);
     };
+
     fetchDoc();
+
+    // אתחול בטוח OneSignal
+    const win = window as any;
+    if (win.OneSignal) {
+      win.OneSignal.push(() => {
+        if (win.OneSignal.Notifications) {
+          console.log("OneSignal Status: Ready");
+        }
+      });
+    }
   }, [params.trialId]);
 
   const toggleTheme = () => {
@@ -43,10 +65,19 @@ export default function SabanOSStudio({ params }: { params: { trialId: string } 
     document.documentElement.classList.toggle("dark");
   };
 
+  const playSound = () => {
+    if (audioRef.current) {
+      audioRef.current.play().catch(() => {});
+    }
+  };
+
   const handleVerify = () => {
     if (inputCode === businessData?.accessCode) {
       setIsAuthorized(true);
-      typeToCanvas(`ברוך הבא לסטודיו הניהול של ${businessData?.businessName}. המוח מאזין ומוכן לעבודה. הוספתי לך את נתוני הפעילות בראש הדף.`);
+      playSound();
+      typeToCanvas(`מערכת SabanOS Studio הופעלה. שלום ${businessData?.fullName}, המוח מאזין ומוכן לעבודה.`);
+    } else {
+      alert("קוד גישה שגוי");
     }
   };
 
@@ -60,33 +91,33 @@ export default function SabanOSStudio({ params }: { params: { trialId: string } 
     }, 25);
   };
 
-  const addFirstCustomer = async () => {
+  const addCustomer = async () => {
     if (!newCustomer.name || !newCustomer.phone) return;
     setIsAddingCustomer(true);
     const docRef = doc(db, "trials", params.trialId);
-    const customerObj = { ...newCustomer, id: Date.now(), createdAt: new Date().toISOString() };
+    const customerObj = { ...newCustomer, id: Date.now(), date: new Date().toLocaleDateString('he-IL') };
     await updateDoc(docRef, { customers: arrayUnion(customerObj) });
     setBusinessData({ ...businessData, customers: [...(businessData.customers || []), customerObj] });
+    setNewCustomer({ name: "", phone: "" });
     setIsAddingCustomer(false);
-    setNewCustomer({ name: "", phone: "", service: "תספורת" });
-    typeToCanvas(`לקוח חדש בסטודיו! ${customerObj.name} נוסף למערכת. שלח לו הודעה עכשיו כדי להתחיל.`);
+    typeToCanvas(`מעולה! הלקוח ${customerObj.name} נוסף בהצלחה למערכת.`);
   };
 
-  const shareToCustomer = (customer: any) => {
-    const message = encodeURIComponent(`היי ${customer.name}, כאן ${businessData.businessName}.\nמעכשיו אפשר לקבוע אצלי תורים בקלות בוואטסאפ! לשמירת תור לחץ כאן: ${window.location.origin}/trial`);
-    window.open(`https://wa.me/972${customer.phone.substring(1)}?text=${message}`, "_blank");
+  const shareToWhatsApp = (customer: any) => {
+    const msg = encodeURIComponent(`היי ${customer.name}, כאן ${businessData.businessName}. שמרתי אותך במערכת שלי! לקביעת תור: ${window.location.origin}/trial`);
+    window.open(`https://wa.me/972${customer.phone.substring(1)}?text=${msg}`, "_blank");
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-green-600 font-black italic tracking-tighter text-2xl animate-pulse">SabanOS Studio AI...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-green-600 font-black italic animate-pulse text-2xl">SabanOS Studio...</div>;
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-12 rounded-[4rem] max-w-md w-full text-center shadow-2xl backdrop-blur-3xl">
+      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex items-center justify-center p-4 transition-colors">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-12 rounded-[4rem] max-w-md w-full text-center shadow-2xl backdrop-blur-xl">
           <div className="w-24 h-24 bg-green-500 rounded-[2.5rem] mx-auto mb-8 flex items-center justify-center shadow-xl text-white shadow-green-500/20"><Lock size={40} /></div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-6 italic tracking-tighter">Enter Studio</h2>
-          <input type="password" maxLength={4} value={inputCode} onChange={(e) => setInputCode(e.target.value)} className="w-full bg-slate-100 dark:bg-black/40 border-2 border-slate-200 dark:border-white/10 rounded-3xl p-6 text-center text-4xl tracking-[15px] text-green-600 outline-none focus:border-green-500 mb-8" placeholder="****" />
-          <button onClick={handleVerify} className="w-full bg-green-600 text-white font-black py-5 rounded-3xl text-xl hover:bg-green-700 transition-all shadow-lg">START SESSION</button>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-6 italic tracking-tighter uppercase">Studio Login</h2>
+          <input type="password" maxLength={4} value={inputCode} onChange={(e) => setInputCode(e.target.value)} className="w-full bg-slate-100 dark:bg-black/40 border-2 border-slate-200 dark:border-white/10 rounded-3xl p-6 text-center text-4xl tracking-[15px] text-green-600 outline-none focus:border-green-500 mb-8 transition-all" placeholder="****" />
+          <button onClick={handleVerify} className="w-full bg-green-600 text-white font-black py-5 rounded-3xl text-xl hover:bg-green-700 transition-all shadow-lg uppercase tracking-widest">Enter Studio</button>
         </motion.div>
       </div>
     );
@@ -105,46 +136,46 @@ export default function SabanOSStudio({ params }: { params: { trialId: string } 
               {businessData?.logoUrl ? <img src={businessData.logoUrl} className="w-full h-full object-cover" /> : <span className="text-5xl font-black italic text-green-600">{businessData?.businessName?.[0]}</span>}
             </div>
             <div>
-              <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none mb-2">{businessData?.businessName} Studio</h1>
-              <div className="flex items-center gap-2 text-green-600 font-bold text-xs">
-                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,1)]" /> SabanOS AI: Active Session
+              <h1 className="text-4xl font-black italic tracking-tighter leading-none mb-2 uppercase">{businessData?.businessName} STUDIO</h1>
+              <div className="flex items-center gap-2 text-green-600 font-bold text-xs uppercase tracking-widest">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,1)]" /> SabanOS Smart AI: Active
               </div>
             </div>
           </div>
           
-          <div className="bg-white dark:bg-white/5 p-8 rounded-[3rem] border border-slate-200 dark:border-white/10 flex items-center justify-between">
+          <div className="bg-white dark:bg-white/5 p-8 rounded-[3rem] border border-slate-200 dark:border-white/10 flex items-center justify-between shadow-sm transition-all hover:border-green-500/30 group">
             <div>
-              <p className="text-[10px] font-black uppercase text-slate-400 mb-1">לקוחות פעילים</p>
-              <h3 className="text-3xl font-black italic">{businessData?.customers?.length || 0}</h3>
+              <p className="text-[10px] font-black uppercase text-slate-400 mb-1 group-hover:text-green-500 transition-colors">לקוחות בסטודיו</p>
+              <h3 className="text-4xl font-black italic">{businessData?.customers?.length || 0}</h3>
             </div>
-            <Users className="text-green-500 opacity-20" size={40} />
+            <Users className="text-green-500 opacity-20 group-hover:opacity-100 transition-all" size={40} />
           </div>
 
-          <div className="bg-white dark:bg-white/5 p-8 rounded-[3rem] border border-slate-200 dark:border-white/10 flex items-center justify-between">
+          <div className="bg-white dark:bg-white/5 p-8 rounded-[3rem] border border-slate-200 dark:border-white/10 flex items-center justify-between shadow-sm transition-all hover:border-blue-500/30 group">
             <div>
-              <p className="text-[10px] font-black uppercase text-slate-400 mb-1">פעולות AI היום</p>
-              <h3 className="text-3xl font-black italic">{(businessData?.trainingHistory?.length || 0) + (businessData?.customers?.length || 0) * 2}</h3>
+              <p className="text-[10px] font-black uppercase text-slate-400 mb-1 group-hover:text-blue-500 transition-colors">פעולות AI</p>
+              <h3 className="text-4xl font-black italic">{(businessData?.customers?.length || 0) * 3 + 12}</h3>
             </div>
-            <TrendingUp className="text-blue-500 opacity-20" size={40} />
+            <TrendingUp className="text-blue-500 opacity-20 group-hover:opacity-100 transition-all" size={40} />
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
-          {/* ניהול לקוחות ומוח */}
+          {/* ניהול לקוחות (צד ימין) */}
           <div className="lg:col-span-4 space-y-10">
             <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3.5rem] p-10 shadow-sm">
-              <h2 className="text-xl font-black mb-8 flex items-center gap-3 italic"><UserPlus className="text-green-600" /> הוסף לקוח למערכת</h2>
+              <h2 className="text-xl font-black mb-8 flex items-center gap-3 italic uppercase tracking-tighter"><UserPlus className="text-green-600" /> הוסף לקוח ראשון</h2>
               <div className="space-y-4">
                 <input value={newCustomer.name} onChange={(e) => setNewCustomer({...newCustomer, name: e.target.value})} placeholder="שם מלא" className="w-full bg-slate-100 dark:bg-black/20 border-none rounded-2xl p-5 outline-none focus:ring-2 ring-green-500 transition-all font-bold" />
                 <input value={newCustomer.phone} onChange={(e) => setNewCustomer({...newCustomer, phone: e.target.value})} placeholder="טלפון (05...)" className="w-full bg-slate-100 dark:bg-black/20 border-none rounded-2xl p-5 outline-none focus:ring-2 ring-green-500 transition-all font-bold" />
-                <button onClick={addFirstCustomer} disabled={isAddingCustomer} className="w-full bg-green-600 text-white font-black py-5 rounded-3xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-tighter">
-                  <Plus size={20} /> הוסף לקוח ועדכן מוח
+                <button onClick={addCustomer} disabled={isAddingCustomer} className="w-full bg-green-600 text-white font-black py-5 rounded-3xl hover:shadow-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-tighter">
+                  <Plus size={20} /> הוסף לסטודיו
                 </button>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3.5rem] p-10 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3.5rem] p-10 shadow-sm">
               <h3 className="text-lg font-black mb-8 opacity-40 flex items-center gap-3 italic uppercase tracking-widest"><Activity size={20}/> Customer Feed</h3>
               <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                 {businessData?.customers?.slice().reverse().map((customer: any) => (
@@ -153,10 +184,10 @@ export default function SabanOSStudio({ params }: { params: { trialId: string } 
                       <div className="w-12 h-12 rounded-2xl bg-white dark:bg-white/10 flex items-center justify-center text-green-600 font-black italic shadow-sm group-hover:bg-green-600 group-hover:text-white transition-all">{customer.name[0]}</div>
                       <div>
                         <p className="font-black text-sm">{customer.name}</p>
-                        <p className="text-[10px] opacity-40 font-mono italic tracking-tighter">{customer.phone}</p>
+                        <p className="text-[10px] opacity-40 font-mono italic tracking-tighter uppercase">{customer.date}</p>
                       </div>
                     </div>
-                    <button onClick={() => shareToCustomer(customer)} className="p-4 bg-green-600 text-white rounded-2xl hover:scale-110 transition-all shadow-lg shadow-green-500/20">
+                    <button onClick={() => shareToWhatsApp(customer)} className="p-4 bg-green-600 text-white rounded-2xl hover:scale-110 transition-all shadow-lg shadow-green-500/20">
                       <Share2 size={18} />
                     </button>
                   </div>
@@ -165,36 +196,36 @@ export default function SabanOSStudio({ params }: { params: { trialId: string } 
             </div>
           </div>
 
-          {/* יומן סטודיו */}
-          <div className="lg:col-span-4">
+          {/* יומן סטודיו (מרכז) */}
+          <div className="lg:col-span-4 space-y-10">
             <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[4rem] p-12 shadow-sm h-full flex flex-col">
               <div className="flex items-center justify-between mb-12">
                 <h2 className="text-2xl font-black flex items-center gap-4 italic uppercase tracking-tighter"><Calendar className="text-green-600" /> Studio Schedule</h2>
-                <div className="text-[10px] bg-green-600 text-white px-4 py-1.5 rounded-full font-black tracking-widest">LIVE SYNC</div>
+                <div className="text-[10px] bg-green-600 text-white px-4 py-1.5 rounded-full font-black tracking-widest uppercase">Live Sync</div>
               </div>
               <div className="grid grid-cols-7 gap-4 flex-1">
                 {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
-                  <button key={day} onClick={() => typeToCanvas(`מנתח זמינות ל-${day} בפברואר... עמאר, היום הזה פנוי לתיאום תורים חדשים.`)} className="aspect-square rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center font-black text-xl hover:bg-green-600 hover:text-white transition-all shadow-inner hover:shadow-lg">
+                  <button key={day} onClick={() => typeToCanvas(`ניתוח יומן ל-${day} בפברואר... עמאר, היום הזה פתוח לקביעת תורים ב-SabanOS.`)} className="aspect-square rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center font-black text-xl hover:bg-green-600 hover:text-white transition-all shadow-inner hover:shadow-lg">
                     {day}
                   </button>
                 ))}
               </div>
               <div className="mt-8 pt-8 border-t border-slate-100 dark:border-white/5 flex justify-between items-center">
                  <button onClick={toggleTheme} className="flex items-center gap-3 text-xs font-black uppercase text-slate-400 hover:text-green-600 transition-all">
-                    {isDarkMode ? <Sun size={18} /> : <Moon size={18} />} Theme Switch
+                    {isDarkMode ? <Sun size={18} /> : <Moon size={18} />} Switch Theme
                  </button>
-                 <div className="text-[10px] font-mono opacity-20 italic uppercase tracking-[4px]">SabanOS v2.0</div>
+                 <div className="text-[10px] font-mono opacity-20 italic uppercase tracking-[4px]">Studio v2.5</div>
               </div>
             </div>
           </div>
 
-          {/* AI LIVE CANVAS */}
+          {/* AI LIVE CANVAS (שמאל) */}
           <div className="lg:col-span-4 h-full min-h-[850px]">
             <div className="bg-white dark:bg-[#0b141a] border-4 border-slate-200 dark:border-white/10 rounded-[5rem] h-full shadow-2xl flex flex-col relative overflow-hidden transition-all duration-700">
               <div className="bg-slate-50 dark:bg-[#1f2c34] p-10 flex items-center gap-5 border-b border-slate-200 dark:border-white/5">
                 <div className="w-16 h-16 rounded-[2rem] bg-green-600 flex items-center justify-center font-black text-white text-3xl italic shadow-2xl shadow-green-600/30">AI</div>
                 <div>
-                  <h3 className="font-black text-2xl italic tracking-tighter">STUDIO AI CORE</h3>
+                  <h3 className="font-black text-2xl italic tracking-tighter uppercase">Studio AI Core</h3>
                   <div className="flex items-center gap-2 italic"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /><p className="text-[10px] text-green-600 font-black uppercase tracking-[2px]">Listening Mode</p></div>
                 </div>
               </div>
