@@ -12,9 +12,10 @@ const firebaseConfig = {
   measurementId: "G-DRH16ZP7S1"
 };
 
-// הסרנו את הבדיקה של typeof window כדי שהמשתנה app יהיה מוגדר תמיד
+// אתחול Singleton שזמין תמיד
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
+// ייצוא ישיר ללא תנאים
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export { app };
