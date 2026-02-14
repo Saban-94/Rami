@@ -1,40 +1,70 @@
-"use client";
+import type { Metadata, Viewport } from "next";
+import Script from "next/script";
+import { Assistant, Inter } from "next/font/google";
+// תיקון נתיב הייבוא ל-relative כדי למנוע שגיאת Module not found ב-Vercel
+import { ToastProvider } from "../components/ui/ToastProvider";
+import "./globals.css";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
-import { db } from "../../../lib/firebase";
-import { doc, getDoc, updateDoc, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
-import Navigation from "../../../components/Navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
-import { 
-  Smartphone, Layout, Palette, Sparkles, Rocket, 
-  Check, ChevronLeft, Calendar, Clock, Lock, 
-  Sun, Moon, Coffee, BookOpen, Scissors, 
-  Stethoscope, Briefcase, ChevronRight, User, Send, MessageSquare
-} from "lucide-react";
-import { format, addDays, isSameDay, startOfDay } from "date-fns";
-import { he } from "date-fns/locale";
+const assistant = Assistant({ 
+  subsets: ["hebrew", "latin"],
+  variable: "--font-assistant",
+  display: 'swap', // מוודא שהטקסט יוצג גם אם הפונט מתעכב
+});
 
-// --- קטגוריות הזרקה ---
-const CATEGORIES = [
-  { id: 'barber', name: 'יופי וטיפוח', icon: <Scissors size={18}/> },
-  { id: 'food', name: 'מזון ומשקאות', icon: <Coffee size={18}/> },
-  { id: 'retail', name: 'חנויות וספרים', icon: <BookOpen size={18}/> },
-  { id: 'medical', name: 'רפואה וקליניקות', icon: <Stethoscope size={18}/> },
-];
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: 'swap',
+});
 
-export default function SabanOSUnifiedStudio({ params }: { params: { trialId: string } }) {
-  // --- States ---
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [inputCode, setInputCode] = useState("");
-  const [businessData, setBusinessData] = useState<any>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [loading, setLoading] = useState(true);
-  
-  // --- Chat States ---
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const scrollRef = useRef<HTMLDivElement>(null);
+export const metadata: Metadata = {
+  title: "SabanOS | Business AI Studio",
+  description: "העסק שלך עובד בשבילך עם בינה מלאכותית חכמה בוואטסאפ ובסטודיו",
+  manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  themeColor: "#020617",
+  width: "device-width",
+  initialScale: 1,
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="he" dir="rtl" className={`${assistant.variable} ${inter.variable}`} suppressHydrationWarning>
+      <head>
+        <Script 
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
+          strategy="afterInteractive" 
+        />
+        <Script id="onesignal-init" strategy="afterInteractive">
+          {`
+            window.OneSignal = window.OneSignal || [];
+            OneSignal.push(function() {
+              OneSignal.init({
+                appId: "be79010a-3a55-4672-9701-f2f9f1295240",
+                safari_web_id: "web.onesignal.auto.1046894c-83b6-45a4-984f-c4e1376f932f",
+                notifyButton: { enable: true },
+                allowLocalhostAsSecureOrigin: true,
+              });
+            });
+          `}
+        </Script>
+      </head>
+      <body className="font-sans antialiased selection:bg-green-500/30 overflow-x-hidden bg-[#020617] text-white">
+        <ToastProvider>
+          <div className="relative min-h-screen flex flex-col">
+            {children}
+          </div>
+        </ToastProvider>
+      </body>
+    </html>
+  );
+}  const scrollRef = useRef<HTMLDivElement>(null);
 
   // --- UI Builder States ---
   const [selectedCat, setSelectedCat] = useState(CATEGORIES[0]);
