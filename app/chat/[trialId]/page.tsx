@@ -1,214 +1,196 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { db } from "../../../lib/firebase";
-import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import Navigation from "../../../components/Navigation";
-import ChatInterface from "../../../components/ChatInterface";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Brain, Calendar, Save, Plus, Sun, Moon, 
-  MessageSquare, UserPlus, Share2, Activity, 
-  Sparkles, TrendingUp, Users, Lock, Clock, Send 
+  Smartphone, Layout, Palette, Sparkles, 
+  Plus, Save, Rocket, Monitor, Smartphone as MobileIcon,
+  Type, Image as ImageIcon, List, Calendar
 } from "lucide-react";
 
-export default function SabanOSStudio({ params }: { params: { trialId: string } }) {
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [inputCode, setInputCode] = useState("");
-  const [businessData, setBusinessData] = useState<any>(null);
-  const [extraContext, setExtraContext] = useState("");
-  const [aiCanvasText, setAiCanvasText] = useState("");
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [newCustomer, setNewCustomer] = useState({ name: "", phone: "" });
+// מבנה ראשוני של האפליקציה (ה-JSON Schema)
+const initialAppConfig = {
+  theme: {
+    primaryColor: "#22c55e", // ירוק SabanOS
+    borderRadius: "24px",
+    fontFamily: "Inter",
+    glassBlur: "20px"
+  },
+  blocks: [
+    { id: "hero", type: "hero", title: "ברוכים הבאים", subtitle: "המספרה המובילה בטייבה" },
+    { id: "cta", type: "button", label: "קבע תור עכשיו", action: "booking" }
+  ]
+};
+
+export default function VisualAppBuilder({ params }: { params: { trialId: string } }) {
+  const [appConfig, setAppConfig] = useState(initialAppConfig);
+  const [activeTab, setActiveTab] = useState<'editor' | 'ai'>('editor');
+  const [aiInput, setAiInput] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // אתחול בטוח של המערכת
   useEffect(() => {
-    // מניעת שגיאת Illegal constructor - יצירת אודיו רק בדפדפן
-    if (typeof window !== "undefined") {
-      audioRef.current = new Audio("/sounds/whatsapp.mp3");
-    }
-
-    const fetchDoc = async () => {
-      try {
-        const docRef = doc(db, "trials", params.trialId);
-        const snap = await getDoc(docRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          setBusinessData(data);
-          setExtraContext(data.businessContext || "");
-        }
-      } catch (err) { console.error("Firebase Error:", err); }
+    const fetchApp = async () => {
+      const docRef = doc(db, "trials", params.trialId);
+      const snap = await getDoc(docRef);
+      if (snap.exists() && snap.data().appConfig) {
+        setAppConfig(snap.data().appConfig);
+      }
       setLoading(false);
     };
-    fetchDoc();
-
-    // טיפול בטוח ב-OneSignal למניעת שגיאת .on של undefined
-    if (typeof window !== "undefined") {
-        const win = window as any;
-        const initOneSignal = () => {
-            if (win.OneSignal && win.OneSignal.Notifications) {
-                console.log("OneSignal Studio Ready");
-            }
-        };
-        if (win.OneSignal) {
-            win.OneSignal.push(initOneSignal);
-        }
-    }
+    fetchApp();
   }, [params.trialId]);
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle("dark");
+  // פונקציה שה-AI משתמש בה כדי לעדכן את העיצוב
+  const applyAiDesign = (style: 'luxury' | 'urban' | 'minimal') => {
+    const themes = {
+      luxury: { primaryColor: "#d4af37", borderRadius: "12px", glassBlur: "40px" },
+      urban: { primaryColor: "#00ff00", borderRadius: "0px", glassBlur: "10px" },
+      minimal: { primaryColor: "#3b82f6", borderRadius: "40px", glassBlur: "20px" }
+    };
+    setAppConfig({ ...appConfig, theme: { ...appConfig.theme, ...themes[style] } });
   };
 
-  const handleVerify = () => {
-    if (inputCode === businessData?.accessCode) {
-      setIsAuthorized(true);
-      if (audioRef.current) audioRef.current.play().catch(() => {});
-      typeToCanvas(`מערכת SabanOS Studio הופעלה. שלום עמאר, המוח מאזין. בוא נעצב את העסק שלך.`);
-    } else {
-      alert("קוד גישה שגוי");
-    }
-  };
-
-  const typeToCanvas = (text: string) => {
-    setAiCanvasText("");
-    let i = 0;
-    const interval = setInterval(() => {
-      setAiCanvasText((prev) => prev + text.charAt(i));
-      i++;
-      if (i >= text.length) clearInterval(interval);
-    }, 25);
-  };
-
-  const saveBrainUpdate = async () => {
-    if (!extraContext) return;
+  const saveConfig = async () => {
     setIsSaving(true);
     const docRef = doc(db, "trials", params.trialId);
-    const timestamp = new Date().toLocaleString('he-IL');
-    await updateDoc(docRef, { 
-      businessContext: extraContext,
-      trainingHistory: arrayUnion({ text: extraContext, date: timestamp })
-    });
-    setBusinessData((prev: any) => ({
-      ...prev,
-      trainingHistory: [...(prev.trainingHistory || []), { text: extraContext, date: timestamp }]
-    }));
+    await updateDoc(docRef, { appConfig });
     setIsSaving(false);
-    typeToCanvas(`עודכן! המוח של "${businessData.businessName}" למד את ההנחיות החדשות.`);
+    alert("האפליקציה פורסמה בהצלחה!");
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-green-600 font-black animate-pulse text-2xl tracking-tighter italic">SabanOS Studio AI...</div>;
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-slate-100 dark:bg-[#020617] flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-12 rounded-[4rem] max-w-md w-full text-center shadow-2xl backdrop-blur-xl">
-          <div className="w-24 h-24 bg-green-500 rounded-[2.5rem] mx-auto mb-8 flex items-center justify-center text-white shadow-xl shadow-green-500/20"><Lock size={40} /></div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-6 italic tracking-tighter uppercase">Enter Studio</h2>
-          <input type="password" maxLength={4} value={inputCode} onChange={(e) => setInputCode(e.target.value)} className="w-full bg-slate-50 dark:bg-black/40 border-2 border-slate-200 dark:border-white/10 rounded-3xl p-6 text-center text-4xl tracking-[15px] text-green-600 outline-none focus:border-green-500 mb-8" placeholder="****" />
-          <button onClick={handleVerify} className="w-full bg-green-600 text-white font-black py-5 rounded-3xl text-xl hover:bg-green-700 transition-all shadow-lg uppercase tracking-widest">START SESSION</button>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <main className={`min-h-screen ${isDarkMode ? 'bg-[#020617] text-white' : 'bg-[#F8FAFC] text-slate-900'} transition-colors duration-500 font-sans`} dir="rtl">
+    <main className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] text-slate-900 dark:text-white" dir="rtl">
       <Navigation />
       
-      <div className="pt-28 px-8 max-w-[1750px] mx-auto pb-20">
+      <div className="pt-24 px-6 max-w-[1800px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 pb-10 h-[calc(100vh-100px)]">
         
-        {/* STATS HEADER */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 mb-10">
-          <div className="xl:col-span-2 bg-white dark:bg-white/5 p-8 rounded-[3.5rem] border border-slate-200 dark:border-white/10 shadow-sm flex items-center gap-6">
-            <div className="w-20 h-20 rounded-[2.5rem] bg-green-500/10 border-2 border-green-500/20 flex items-center justify-center">
-              <span className="text-4xl font-black italic text-green-600">{businessData?.businessName?.[0]}</span>
-            </div>
-            <div>
-              <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">{businessData?.businessName} STUDIO</h1>
-              <div className="flex items-center gap-2 text-green-600 font-bold text-xs uppercase mt-2"><span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> AI Core: Active</div>
-            </div>
-          </div>
-          <div className="bg-white dark:bg-white/5 p-8 rounded-[3rem] border border-slate-200 dark:border-white/10 flex items-center justify-between shadow-sm group hover:border-green-500/40 transition-all">
-            <div><p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-green-500 transition-colors">לקוחות</p><h3 className="text-3xl font-black italic">{businessData?.customers?.length || 0}</h3></div>
-            <Users className="text-green-500 opacity-20" size={40} />
-          </div>
-          <div className="bg-white dark:bg-white/5 p-8 rounded-[3rem] border border-slate-200 dark:border-white/10 flex items-center justify-between shadow-sm group hover:border-blue-500/40 transition-all">
-            <div><p className="text-[10px] font-black uppercase text-slate-400 group-hover:text-blue-500 transition-colors">פעולות AI</p><h3 className="text-3xl font-black italic">{(businessData?.trainingHistory?.length || 0) + 12}</h3></div>
-            <Activity className="text-blue-500 opacity-20" size={40} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          
-          {/* ניהול לקוחות ויומן (ימין) */}
-          <div className="lg:col-span-4 space-y-10">
-            <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3.5rem] p-10 shadow-sm">
-              <h2 className="text-xl font-black mb-8 flex items-center gap-3 italic uppercase"><Calendar className="text-green-600" /> יומן וסטטיסטיקה</h2>
-              <div className="grid grid-cols-7 gap-3 mb-10">
-                {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
-                  <button key={day} onClick={() => typeToCanvas(`ניתוח יומן ל-${day} בחודש... עמאר, היום הזה מוכן לקבלת לקוחות.`)} className="aspect-square rounded-2xl bg-slate-100 dark:bg-white/5 flex items-center justify-center font-black text-xl hover:bg-green-600 hover:text-white transition-all shadow-inner">
-                    {day}
-                  </button>
-                ))}
-              </div>
-              <button onClick={toggleTheme} className="flex items-center gap-3 text-xs font-black uppercase text-slate-400 hover:text-green-600 transition-all">{isDarkMode ? <Sun size={18} /> : <Moon size={18} />} Switch Theme</button>
+        {/* סרגל כלים שמאלי - השכבות והבלוקים */}
+        <div className="lg:col-span-3 space-y-6 overflow-y-auto pr-2">
+          <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-6 shadow-sm">
+            <h2 className="text-xl font-black italic mb-6 flex items-center gap-2">
+              <Layout size={20} className="text-green-500" />
+              מבנה האפליקציה
+            </h2>
+            
+            <div className="space-y-3">
+              {appConfig.blocks.map((block) => (
+                <div key={block.id} className="p-4 bg-slate-50 dark:bg-black/20 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white dark:bg-white/5 rounded-lg">
+                      {block.type === 'hero' ? <ImageIcon size={16}/> : <List size={16}/>}
+                    </div>
+                    <span className="text-sm font-bold opacity-80">{block.title || block.label}</span>
+                  </div>
+                  <Plus size={14} className="opacity-0 group-hover:opacity-100 cursor-pointer" />
+                </div>
+              ))}
+              <button className="w-full py-4 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-2xl text-xs font-black opacity-40 hover:opacity-100 hover:border-green-500 transition-all flex items-center justify-center gap-2 mt-4">
+                <Plus size={16} /> הוסף בלוק חדש
+              </button>
             </div>
           </div>
 
-          {/* עריכת מוח (מרכז) */}
-          <div className="lg:col-span-4 space-y-10">
-            <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3.5rem] p-10 shadow-sm">
-              <h2 className="text-xl font-black mb-8 flex items-center gap-3 italic uppercase"><Brain className="text-green-600" /> עריכת זיכרון המוח</h2>
-              <div className="space-y-6">
-                <textarea 
-                  value={extraContext} 
-                  onChange={(e) => setExtraContext(e.target.value)} 
-                  placeholder="הקלד כאן מחירים, שעות וכללי עסק..."
-                  className="w-full h-64 bg-slate-50 dark:bg-black/20 border-none rounded-[2rem] p-8 outline-none focus:ring-2 ring-green-500 transition-all font-medium text-lg shadow-inner resize-none"
-                />
-                <button 
-                  onClick={saveBrainUpdate} 
-                  disabled={isSaving}
-                  className="w-full bg-green-600 text-white font-black py-5 rounded-[2.5rem] hover:shadow-2xl transition-all flex items-center justify-center gap-3 shadow-lg shadow-green-500/20"
-                >
-                  {isSaving ? "מסנכרן נתונים..." : "עדכן מוח וזיכרון"} <Send size={20} />
+          <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-6 shadow-sm">
+            <h2 className="text-xl font-black italic mb-6 flex items-center gap-2">
+              <Palette size={20} className="text-blue-500" />
+              עיצוב מותג (AI)
+            </h2>
+            <div className="grid grid-cols-3 gap-2">
+              {['luxury', 'urban', 'minimal'].map((s) => (
+                <button key={s} onClick={() => applyAiDesign(s as any)} className="py-3 px-1 rounded-xl bg-slate-100 dark:bg-white/5 text-[10px] font-black uppercase hover:bg-green-500 hover:text-black transition-all">
+                  {s}
                 </button>
-              </div>
+              ))}
             </div>
           </div>
-
-          {/* AI LIVE CANVAS (שמאל) */}
-          <div className="lg:col-span-4 h-full min-h-[850px]">
-            <div className="bg-white dark:bg-[#0b141a] border-4 border-slate-200 dark:border-white/10 rounded-[5rem] h-full shadow-2xl flex flex-col relative overflow-hidden">
-              <div className="bg-slate-50 dark:bg-[#1f2c34] p-10 flex items-center gap-5 border-b border-slate-200 dark:border-white/5">
-                <div className="w-16 h-16 rounded-[2rem] bg-green-600 flex items-center justify-center font-black text-white text-3xl italic shadow-2xl">AI</div>
-                <div><h3 className="font-black text-2xl italic tracking-tighter uppercase leading-none mb-1">Studio AI Core</h3><div className="flex items-center gap-2 italic"><div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /><p className="text-[10px] text-green-600 font-black uppercase tracking-widest">Listening</p></div></div>
-              </div>
-              <div className="flex-1 p-12 overflow-y-auto">
-                <AnimatePresence>
-                  {aiCanvasText && (
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="p-10 bg-green-600/5 dark:bg-green-600/10 border-r-4 border-green-600 rounded-l-[3rem] shadow-inner relative">
-                      <Sparkles className="absolute top-4 left-4 text-green-500 opacity-20" size={24} />
-                      <p className="text-2xl font-bold leading-snug text-green-700 dark:text-green-400 font-mono italic tracking-tight">{aiCanvasText}<span className="inline-block w-2.5 h-8 bg-green-600 animate-pulse ml-3 align-middle" /></p>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <div className="mt-12 opacity-20"><ChatInterface trialId={params.trialId} /></div>
-              </div>
-              <div className="p-10 bg-slate-50 dark:bg-white/5 border-t border-slate-200 dark:border-white/5 flex gap-4">
-                <div className="flex-1 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-[2rem] p-5 text-[10px] font-black opacity-20 uppercase tracking-[4px] italic">AI Sync Processing...</div>
-                <div className="bg-green-600 p-5 rounded-[2rem] text-white shadow-xl shadow-green-600/20"><MessageSquare size={24} /></div>
-              </div>
-            </div>
-          </div>
-
         </div>
+
+        {/* מרכז - הקנבס החי (iPhone Preview) */}
+        <div className="lg:col-span-5 flex flex-col items-center justify-center relative">
+          <div className="absolute top-0 flex gap-4 p-2 bg-white/50 dark:bg-white/5 rounded-full backdrop-blur-md mb-8 border border-white/10">
+            <button className="p-2 text-green-500"><MobileIcon size={20}/></button>
+            <button className="p-2 opacity-30"><Monitor size={20}/></button>
+          </div>
+
+          {/* iPhone Shell */}
+          <div className="w-[320px] h-[650px] bg-black rounded-[3.5rem] border-[8px] border-slate-800 shadow-[0_0_100px_rgba(0,0,0,0.2)] overflow-hidden relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-2xl z-20" /> {/* Notch */}
+            
+            {/* תוכן האפליקציה המרונדר מה-JSON */}
+            <div 
+              className="w-full h-full overflow-y-auto p-6 pt-12 transition-all duration-700"
+              style={{ fontFamily: appConfig.theme.fontFamily, backgroundColor: isDarkMode ? '#000' : '#fff' }}
+            >
+              {appConfig.blocks.map((block) => (
+                <motion.div 
+                  layout
+                  key={block.id} 
+                  className="mb-6"
+                >
+                  {block.type === 'hero' && (
+                    <div className="text-center py-10">
+                      <div className="w-16 h-16 bg-slate-200 rounded-2xl mx-auto mb-4" />
+                      <h3 className="text-2xl font-black italic" style={{ color: appConfig.theme.primaryColor }}>{block.title}</h3>
+                      <p className="text-xs opacity-50 mt-1">{block.subtitle}</p>
+                    </div>
+                  )}
+                  {block.type === 'button' && (
+                    <button 
+                      className="w-full py-4 font-black text-white shadow-lg shadow-green-500/20"
+                      style={{ 
+                        backgroundColor: appConfig.theme.primaryColor, 
+                        borderRadius: appConfig.theme.borderRadius 
+                      }}
+                    >
+                      {block.label}
+                    </button>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* צד ימין - AI Control Center */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3rem] p-8 flex-1 flex flex-col shadow-sm backdrop-blur-xl">
+            <div className="flex items-center gap-3 mb-8 text-green-500">
+              <Sparkles size={24} />
+              <h2 className="text-2xl font-black italic tracking-tighter">AI DESIGNER</h2>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto mb-6 p-4 bg-slate-50 dark:bg-black/40 rounded-3xl border border-slate-100 dark:border-white/5">
+              <p className="text-sm font-medium leading-relaxed italic opacity-60">
+                היי עמאר, אני מוכן לעצב. פשוט תגיד לי מה לשנות באפליקציה... לדוגמה: "תעשה את האפליקציה בסטייל יוקרתי עם פינות מעוגלות".
+              </p>
+            </div>
+
+            <div className="relative">
+              <textarea 
+                value={aiInput}
+                onChange={(e) => setAiInput(e.target.value)}
+                placeholder="כתוב הוראה ל-AI..."
+                className="w-full h-32 bg-white dark:bg-black/60 border border-slate-200 dark:border-white/10 rounded-[2rem] p-6 text-sm outline-none focus:ring-2 ring-green-500 transition-all resize-none shadow-inner"
+              />
+              <button className="absolute bottom-4 left-4 p-3 bg-green-500 text-black rounded-2xl shadow-lg hover:scale-105 transition-all">
+                <Sparkles size={18} />
+              </button>
+            </div>
+
+            <button 
+              onClick={saveConfig}
+              disabled={isSaving}
+              className="w-full bg-slate-900 dark:bg-white text-white dark:text-black font-black py-5 rounded-[2rem] mt-6 flex items-center justify-center gap-3 hover:shadow-2xl transition-all"
+            >
+              {isSaving ? "מפרסם..." : "פרסם אפליקציה ללקוחות"} <Rocket size={20} />
+            </button>
+          </div>
+        </div>
+
       </div>
     </main>
   );
