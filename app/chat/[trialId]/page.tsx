@@ -36,23 +36,29 @@ export default function SabanOSProductionStudio({ params }: { params: { trialId:
   const [aiCanvasText, setAiCanvasText] = useState("");
   const [currentLang, setCurrentLang] = useState<"he" | "ar" | "en">("he");
 
-  // --- OneSignal dynamic initialization (Fix for undefined property error) ---
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const initOneSignal = async () => {
-        const OneSignal = (window as any).OneSignal;
-        if (OneSignal) {
-          await OneSignal.push(() => {
-            OneSignal.init({
-              appId: "YOUR_ONESIGNAL_ID", // TODO: Replace with real ID
-              allowLocalhostAsSecureOrigin: true,
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    const initOneSignal = async () => {
+      const OneSignal = (window as any).OneSignal;
+      if (OneSignal) {
+        await OneSignal.push(() => {
+          // בדיקה שהאובייקט Notifications קיים לפני שימוש ב-on
+          if (OneSignal.Notifications) {
+            OneSignal.Notifications.addEventListener("foregroundWillDisplay", (event: any) => {
+              console.log("Notification received in foreground:", event);
             });
+          }
+          
+          OneSignal.init({
+            appId: "767878273802-1p5oifchiurnkhv9g4dfosn26snseh30", // ה-App ID שלך
+            allowLocalhostAsSecureOrigin: true,
           });
-        }
-      };
-      initOneSignal();
-    }
-  }, []);
+        });
+      }
+    };
+    initOneSignal();
+  }
+}, []);
 
   // --- Initial Data Fetch ---
   useEffect(() => {
