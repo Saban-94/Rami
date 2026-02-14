@@ -5,7 +5,6 @@ import nextDynamic from "next/dynamic";
 import Navigation from "../../components/Navigation";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 const TrialRegistrationForm = nextDynamic(
   () => import("../../components/TrialRegistrationForm"),
