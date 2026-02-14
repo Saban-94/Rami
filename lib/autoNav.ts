@@ -24,10 +24,6 @@ export function ensurePageOps(
   if (manifest.pages[page.id]) return [];
   
   return [
-    { 
-      op: "add", 
-      path: `/pages/${page.id}`, 
-      value: { ...page, blocks: [] } 
-    }
+    { op: "add", path: `/pages/${page.id}`, value: { ...page, blocks: [] } }
   ];
 }
