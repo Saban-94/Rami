@@ -1,208 +1,173 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { db } from "../../../lib/firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
-import Navigation from "../../../components/Navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Smartphone, Layout, Palette, Sparkles, 
-  Rocket, Coffee, BookOpen, Scissors, 
-  CheckCircle2, Lock, Sun, Moon,
-  Home, Send, Plus, Box, MessageSquare, Megaphone, Zap, TrendingUp
-} from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { Calendar, Clock, Check, ChevronLeft, User, Sparkles } from "lucide-react";
+import { format, addDays, isSameDay, startOfDay } from "date-fns";
+import { he } from "date-fns/locale";
 
-// תוספת של המודלים מהקופיילוט
-import { UnlockModal } from "../../../components/UnlockModal";
-import { PricingSheet } from "../../../components/PricingSheet";
+// --- Animation Variants ---
+const containerVariants = {
+  hidden: { opacity: 0, height: 0 },
+  visible: { 
+    opacity: 1, 
+    height: "auto",
+    transition: { 
+      duration: 0.5, 
+      ease: [0.16, 1, 0.3, 1], // Custom Apple-style ease
+      staggerChildren: 0.04,
+      delayChildren: 0.1
+    } 
+  },
+  exit: { opacity: 0, height: 0, transition: { duration: 0.3 } }
+};
 
-export default function SabanOSStudioV2_5({ params }: { params: { trialId: string } }) {
-  // States לניהול המערכת
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [inputCode, setInputCode] = useState("");
-  const [businessData, setBusinessData] = useState<any>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [aiCanvasText, setAiCanvasText] = useState("");
-  const [loading, setLoading] = useState(true);
-  
-  // States לניהול ה-Trial והשדרוגים
-  const [showUnlock, setShowUnlock] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
-  const [usage, setUsage] = useState({ pages: 1, maxPages: 3, images: 4, maxImages: 10 });
+const itemVariants = {
+  hidden: { opacity: 0, y: 15, scale: 0.9 },
+  visible: { opacity: 1, y: 0, scale: 1 },
+};
 
-  useEffect(() => {
-    const fetchDoc = async () => {
-      try {
-        const docRef = doc(db, "trials", params.trialId);
-        const snap = await getDoc(docRef);
-        if (snap.exists()) setBusinessData(snap.data());
-      } catch (err) { console.error(err); }
-      setLoading(false);
-    };
-    fetchDoc();
-  }, [params.trialId]);
+export default function AvailabilityCalendarBlock({ content, layout, data }: any) {
+  const [selectedStaff, setSelectedStaff] = useState(data?.staff?.[0]?.id || "ammar");
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const toggleTheme = () => {
-    setIsDarkMode(!isDarkMode);
-    document.documentElement.classList.toggle("dark");
+  const weekDays = useMemo(() => {
+    return Array.from({ length: 7 }).map((_, i) => addDays(startOfDay(new Date()), i));
+  }, []);
+
+  // דוגמת דאטה מורחבת לתמיכה בצוות
+  const staffMembers = [
+    { id: "ammar", name: "עמאר", role: "Master Barber", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Ammar" },
+    { id: "itay", name: "איתי", role: "Stylist", img: "https://api.dicebear.com/7.x/avataaars/svg?seed=Itay" },
+  ];
+
+  const availableSlots = ["09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"];
+
+  const handleDateChange = (date: Date) => {
+    setLoading(true);
+    setSelectedDate(date);
+    setSelectedSlot(null);
+    setTimeout(() => setLoading(false), 600); // סימולציה של Firestore
   };
-
-  const handleVerify = () => {
-    if (inputCode === businessData?.accessCode) {
-      setIsAuthorized(true);
-      typeToCanvas(`ברוך הבא עמאר. סרגל הכלים של SabanOS v2.5 הופעל. שים לב: נותרו לך עוד ${usage.maxPages - usage.pages} דפים בחבילת הניסיון.`);
-    }
-  };
-
-  const typeToCanvas = (text: string) => {
-    setAiCanvasText("");
-    let i = 0;
-    const interval = setInterval(() => {
-      setAiCanvasText((prev) => prev + text.charAt(i));
-      i++;
-      if (i >= text.length) clearInterval(interval);
-    }, 20);
-  };
-
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-green-600 font-black animate-pulse">SabanOS v2.5...</div>;
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-slate-100 dark:bg-[#020617] flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-12 rounded-[4rem] max-w-md w-full text-center shadow-2xl backdrop-blur-xl">
-          <div className="w-20 h-20 bg-green-500 rounded-[2.5rem] mx-auto mb-8 flex items-center justify-center text-white shadow-xl shadow-green-500/20"><Lock size={32} /></div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-6 italic uppercase tracking-tighter">Enter Studio v2.5</h2>
-          <input type="password" maxLength={4} value={inputCode} onChange={(e) => setInputCode(e.target.value)} className="w-full bg-slate-50 dark:bg-black/40 border-2 border-slate-200 dark:border-white/10 rounded-3xl p-6 text-center text-4xl tracking-[15px] text-green-600 outline-none focus:border-green-500 mb-8" placeholder="****" />
-          <button onClick={handleVerify} className="w-full bg-green-600 text-white font-black py-5 rounded-3xl text-xl shadow-lg">UNLOCK TOOLS</button>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
-    <main className={`min-h-screen ${isDarkMode ? 'bg-[#020617] text-white' : 'bg-[#F8FAFC] text-slate-900'} transition-colors duration-500 font-sans selection:bg-green-500/30 overflow-x-hidden`} dir="rtl">
-      <Navigation />
-      
-      <div className="pt-24 px-8 max-w-[1850px] mx-auto pb-32">
-        
-        {/* TOP STATUS BAR */}
-        <div className="flex items-center justify-between mb-8 bg-white dark:bg-white/5 p-6 rounded-[3rem] border border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-md">
-          <div className="flex items-center gap-4">
-             <div className="p-3 bg-green-500/10 rounded-2xl text-green-600"><TrendingUp size={20}/></div>
-             <div>
-                <p className="text-[10px] font-black uppercase text-slate-400">סטטוס חבילה</p>
-                <p className="text-sm font-bold">10 ימי ניסיון (Trial Mode)</p>
-             </div>
-          </div>
-          
-          {/* USAGE PROGRESS */}
-          <div className="flex items-center gap-8">
-             <div className="hidden md:block">
-                <div className="flex justify-between text-[10px] font-black mb-1 opacity-40 uppercase italic">
-                   <span>דפים פנימיים</span>
-                   <span>{usage.pages}/{usage.maxPages}</span>
-                </div>
-                <div className="w-48 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
-                   <motion.div initial={{ width: 0 }} animate={{ width: `${(usage.pages / usage.maxPages) * 100}%` }} className="h-full bg-green-500" />
-                </div>
-             </div>
-             <button onClick={() => setShowPricing(true)} className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl text-xs font-black hover:scale-105 transition-all shadow-lg">שדרג עכשיו</button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          {/* ה-iPhone וה-AI Canvas נשארים במרכז ובצדדים כפי שהיה */}
-          <div className="lg:col-span-8 bg-white/50 dark:bg-black/20 rounded-[4rem] border-2 border-dashed border-slate-200 dark:border-white/5 min-h-[600px] flex items-center justify-center relative overflow-hidden">
-             {/* iPhone Preview (המקום שבו האפליקציה נבנית) */}
-             <div className="w-[300px] h-[600px] bg-black rounded-[4rem] border-[10px] border-slate-800 shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-800 rounded-b-3xl z-30" />
-                <div className={`w-full h-full p-6 pt-12 ${isDarkMode ? 'bg-[#0b141a]' : 'bg-white'}`}>
-                   <h3 className="text-xl font-black italic text-center mb-8">{businessData?.businessName}</h3>
-                   <div className="h-40 bg-slate-100 dark:bg-white/5 rounded-3xl mb-4 border border-dashed border-slate-300 flex items-center justify-center opacity-30 italic text-xs uppercase font-black">App Content Here</div>
-                   <button className="w-full py-4 bg-green-600 text-white rounded-2xl font-black shadow-lg">קבע תור</button>
-                </div>
-             </div>
-          </div>
-
-          <div className="lg:col-span-4 h-full">
-            <div className="bg-white dark:bg-[#0b141a] border border-slate-200 dark:border-white/10 rounded-[3.5rem] p-10 h-full flex flex-col shadow-2xl">
-              <div className="flex items-center gap-3 mb-8">
-                <Sparkles className="text-green-500" size={24} />
-                <h2 className="text-2xl font-black italic uppercase tracking-tighter">AI Designer</h2>
+    <div 
+      className="bg-white/80 dark:bg-black/40 backdrop-blur-3xl border border-white/40 dark:border-white/10 shadow-2xl overflow-hidden"
+      style={{ borderRadius: layout?.radius || 28 }}
+    >
+      {/* 1. Top Section - Staff Picker (Multi-staff support) */}
+      <div className="p-6 border-b border-black/5 dark:border-white/5">
+        <h3 className="text-xs font-black uppercase tracking-widest opacity-40 mb-4 italic flex items-center gap-2">
+          <Sparkles size={12} /> בחרו סטייליסט
+        </h3>
+        <div className="flex gap-4">
+          {staffMembers.map((member) => (
+            <button 
+              key={member.id}
+              onClick={() => setSelectedStaff(member.id)}
+              className="relative flex items-center gap-3 p-2 pr-4 rounded-2xl transition-all"
+            >
+              <div className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all ${selectedStaff === member.id ? 'border-green-500 scale-110 shadow-lg' : 'border-transparent opacity-50'}`}>
+                <img src={member.img} alt={member.name} className="w-full h-full object-cover" />
               </div>
-              <div className="flex-1 overflow-y-auto mb-8 bg-slate-50 dark:bg-white/5 rounded-3xl p-6 border border-slate-100 dark:border-white/5">
-                <p className="text-lg font-bold leading-relaxed text-green-700 dark:text-green-400 font-mono italic">
-                  {aiCanvasText || "ממתין לפקודה שלך, עמאר..."}
-                </p>
+              <div className="text-right">
+                <p className={`text-sm font-black italic ${selectedStaff === member.id ? 'text-green-600' : 'opacity-40'}`}>{member.name}</p>
+                <p className="text-[10px] opacity-30 font-bold">{member.role}</p>
               </div>
-              <div className="relative">
-                <textarea 
-                  placeholder="למשל: 'תעצב לי את האפליקציה בסטייל יוקרתי'..."
-                  className="w-full h-32 bg-white dark:bg-black/60 border border-slate-200 dark:border-white/10 rounded-[2rem] p-6 text-sm outline-none focus:ring-2 ring-green-500 transition-all resize-none shadow-inner"
-                />
-                <button className="absolute bottom-4 left-4 p-4 bg-green-600 text-white rounded-2xl shadow-xl hover:scale-105 transition-all"><Send size={20}/></button>
-              </div>
-            </div>
-          </div>
+              {selectedStaff === member.id && (
+                <motion.div layoutId="staffActive" className="absolute inset-0 bg-green-500/5 rounded-2xl -z-10" />
+              )}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* ה-GLASS TOOLBAR - הלב של הסטודיו v2.5 */}
-      <motion.div 
-        initial={{ y: 100 }} 
-        animate={{ y: 0 }} 
-        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-white/60 dark:bg-black/60 backdrop-blur-2xl border border-white/30 dark:border-white/10 px-6 py-3 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.3)] flex items-center gap-4"
-      >
-        <button onClick={() => typeToCanvas("פותח את בונה הדפים... מה תרצה להוסיף היום?")} className="flex flex-col items-center gap-1 group">
-          <div className="p-3 bg-white dark:bg-white/10 rounded-2xl group-hover:bg-green-500 group-hover:text-white transition-all shadow-sm"><Box size={20}/></div>
-          <span className="text-[8px] font-black uppercase opacity-40">Builder</span>
-        </button>
+      <div className="p-6">
+        {/* 2. Date Picker */}
+        <div className="flex gap-3 overflow-x-auto pb-4 mb-6 no-scrollbar">
+          {weekDays.map((date) => {
+            const isSelected = isSameDay(date, selectedDate);
+            return (
+              <motion.button
+                key={date.toISOString()}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => handleDateChange(date)}
+                className={`flex flex-col items-center min-w-[65px] py-4 rounded-3xl border transition-all duration-500 ${
+                  isSelected 
+                  ? "bg-green-600 border-green-500 text-white shadow-xl" 
+                  : "bg-white/50 dark:bg-white/5 border-white/20 text-slate-400"
+                }`}
+              >
+                <span className="text-[10px] font-bold uppercase mb-1">{format(date, "EEE", { locale: he })}</span>
+                <span className="text-lg font-black italic">{format(date, "d")}</span>
+              </motion.button>
+            );
+          })}
+        </div>
 
-        <button onClick={() => typeToCanvas("עורך צ'אטבוט: רשום לי חוקים חדשים לבוט ואני אעדכן אותו.")} className="flex flex-col items-center gap-1 group">
-          <div className="p-3 bg-white dark:bg-white/10 rounded-2xl group-hover:bg-blue-500 group-hover:text-white transition-all shadow-sm"><MessageSquare size={20}/></div>
-          <span className="text-[8px] font-black uppercase opacity-40">Chatbot</span>
-        </button>
+        {/* 3. Animated Time Grid (The Reveal) */}
+        <div className="min-h-[220px]">
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div 
+                key="loading"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="h-[200px] flex items-center justify-center"
+              >
+                <div className="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+              </motion.div>
+            ) : (
+              <motion.div 
+                key={`${selectedDate.toISOString()}-${selectedStaff}`}
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="grid grid-cols-3 gap-3"
+              >
+                {availableSlots.map((slot) => (
+                  <motion.button
+                    key={slot}
+                    variants={itemVariants}
+                    whileHover={{ y: -3, scale: 1.02 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => setSelectedSlot(slot)}
+                    className={`py-4 rounded-2xl font-black text-sm relative transition-all ${
+                      selectedSlot === slot 
+                      ? "bg-slate-900 dark:bg-white text-white dark:text-black shadow-2xl scale-105" 
+                      : "bg-white/50 dark:bg-white/10 border border-black/5 dark:border-white/5"
+                    }`}
+                  >
+                    {slot}
+                    {selectedSlot === slot && (
+                      <motion.div layoutId="slotCheck" className="absolute -top-1 -right-1 bg-green-500 text-white p-1 rounded-full shadow-lg">
+                        <Check size={10} strokeWidth={4} />
+                      </motion.div>
+                    )}
+                  </motion.button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-        <button onClick={() => typeToCanvas("מנוע קמפיינים: שלח מבצע החודש לכל הלקוחות בוואטסאפ.")} className="flex flex-col items-center gap-1 group">
-          <div className="p-3 bg-white dark:bg-white/10 rounded-2xl group-hover:bg-purple-500 group-hover:text-white transition-all shadow-sm"><Megaphone size={20}/></div>
-          <span className="text-[8px] font-black uppercase opacity-40">Campaigns</span>
-        </button>
-
-        <div className="w-px h-8 bg-slate-300 dark:bg-white/10 mx-2" />
-
-        <button onClick={() => {
-          if (usage.pages >= usage.maxPages) setShowUnlock(true);
-          else setUsage({...usage, pages: usage.pages + 1});
-        }} className="flex flex-col items-center gap-1 group">
-          <div className="p-3 bg-green-600 text-white rounded-2xl hover:scale-110 transition-all shadow-lg shadow-green-500/30"><Plus size={20}/></div>
-          <span className="text-[8px] font-black uppercase text-green-500">Add Page</span>
-        </button>
-
-        <button onClick={() => setShowPricing(true)} className="flex flex-col items-center gap-1 group">
-          <div className="p-3 bg-slate-900 dark:bg-white text-white dark:text-black rounded-2xl hover:scale-110 transition-all shadow-lg"><Rocket size={20}/></div>
-          <span className="text-[8px] font-black uppercase opacity-40">Publish</span>
-        </button>
-      </motion.div>
-
-      {/* מודלים של ה-Paywall */}
-      <UnlockModal 
-        open={showUnlock} 
-        type="pages" 
-        limits={{ pages: 3, images: 10 }} 
-        current={{ pages: 3, images: usage.images }} 
-        plan="trial" 
-        onClose={() => setShowUnlock(false)} 
-        onUpgrade={() => { setShowUnlock(false); setShowPricing(true); }} 
-      />
-      <PricingSheet 
-        open={showPricing} 
-        currentPlan="trial" 
-        onClose={() => setShowPricing(false)} 
-        onCheckout={(plan) => {
-          alert(`שדרוג ל-${plan} יופעל בקרוב!`);
-          setShowPricing(false);
-        }} 
-      />
-    </main>
+        {/* 4. Action Button */}
+        <motion.button
+          animate={{ 
+            scale: selectedSlot ? 1 : 0.98,
+            opacity: selectedSlot ? 1 : 0.6 
+          }}
+          whileHover={selectedSlot ? { scale: 1.02 } : {}}
+          className={`w-full mt-8 py-5 rounded-3xl font-black text-lg flex items-center justify-center gap-3 transition-all ${
+            selectedSlot ? "bg-green-600 text-white shadow-2xl shadow-green-500/30" : "bg-slate-200 dark:bg-white/5 text-slate-400"
+          }`}
+        >
+          <span>שריינו תור אצל {staffMembers.find(s => s.id === selectedStaff)?.name}</span>
+          <ChevronLeft size={20} />
+        </motion.button>
+      </div>
+    </div>
   );
 }
