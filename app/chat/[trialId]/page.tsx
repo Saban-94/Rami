@@ -3,24 +3,24 @@
 import React, { useState, useEffect, useRef } from "react";
 import { db } from "../../../lib/firebase";
 import { doc, getDoc, updateDoc, arrayUnion } from "firebase/firestore";
-import ChatInterface from "../../../components/ChatInterface";
 import Navigation from "../../../components/Navigation";
+import ChatInterface from "../../../components/ChatInterface";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Brain, Sparkles, Lock, Calendar, 
-  Clock, Paperclip, ChevronRight, 
-  ChevronLeft, Plus, Settings, Activity
+  Brain, Calendar, Clock, Edit3, Save, 
+  Plus, Trash2, Sun, Moon, CheckCircle2, 
+  MessageSquare, User, Activity
 } from "lucide-react";
 
-export default function ProfessionalAdminPage({ params }: { params: { trialId: string } }) {
+export default function SabanOSStudio({ params }: { params: { trialId: string } }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [inputCode, setInputCode] = useState("");
   const [businessData, setBusinessData] = useState<any>(null);
   const [extraContext, setExtraContext] = useState("");
   const [aiCanvasText, setAiCanvasText] = useState("");
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [loading, setLoading] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedDate, setSelectedDate] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchDoc = async () => {
@@ -36,10 +36,16 @@ export default function ProfessionalAdminPage({ params }: { params: { trialId: s
     fetchDoc();
   }, [params.trialId]);
 
+  // לוגיקת שינוי ערכת נושא
+  const toggleTheme = () => {
+    setIsDarkMode(!isDarkMode);
+    document.documentElement.classList.toggle("dark");
+  };
+
   const handleVerify = () => {
     if (inputCode === businessData?.accessCode) {
       setIsAuthorized(true);
-      typeToCanvas(`מערכת SabanOS Smart AI הופעלה. שלום עמאר, המוח מאזין ומסונכרן ליומן של ${businessData?.businessName}.`);
+      typeToCanvas(`מערכת SabanOS Studio הופעלה במצב ${isDarkMode ? 'Dark' : 'Light'}. שלום עמאר, אני מאזין ומוכן לעדכונים.`);
     }
   };
 
@@ -53,157 +59,186 @@ export default function ProfessionalAdminPage({ params }: { params: { trialId: s
     }, 25);
   };
 
-  const saveBrainUpdate = async () => {
+  const saveBrainUpdate = async (textToSave: string) => {
     const docRef = doc(db, "trials", params.trialId);
-    await updateDoc(docRef, { businessContext: extraContext });
-    typeToCanvas(`העדכון התקבל. המוח למד את הנתונים החדשים: "${extraContext}". אני מעדכן את זמינות התורים בהתאם.`);
+    const timestamp = new Date().toLocaleString('he-IL');
+    const updateObj = { text: textToSave, date: timestamp };
+    
+    await updateDoc(docRef, { 
+      businessContext: textToSave,
+      trainingHistory: arrayUnion(updateObj)
+    });
+    
+    setBusinessData({
+      ...businessData,
+      trainingHistory: [...(businessData.trainingHistory || []), updateObj]
+    });
+    
+    typeToCanvas(`המידע סונכרן בהצלחה לטבלת הזיכרון. המוח מעודכן.`);
   };
 
-  // לוגיקת יומן
-  const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
-  const calendarDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const daysInMonth = Array.from({ length: 30 }, (_, i) => i + 1);
 
-  if (loading) return <div className="min-h-screen bg-[#020617] flex items-center justify-center text-green-500 font-black italic">LOADING SabanOS...</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-green-600 font-black italic animate-pulse">SabanOS Studio Loading...</div>;
 
   if (!isAuthorized) {
     return (
-      <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4" dir="rtl">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white/5 border border-white/10 p-12 rounded-[3.5rem] max-w-md w-full text-center backdrop-blur-3xl shadow-2xl">
-          <div className="w-24 h-24 bg-green-500 rounded-[2.5rem] mx-auto mb-8 flex items-center justify-center shadow-2xl">
-            <Lock className="text-black" size={40} />
+      <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex items-center justify-center p-4 transition-colors duration-500">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-12 rounded-[3.5rem] max-w-md w-full text-center shadow-2xl backdrop-blur-xl">
+          <div className="w-20 h-20 bg-green-500 rounded-[2rem] mx-auto mb-8 flex items-center justify-center shadow-xl">
+            <Brain className="text-white" size={32} />
           </div>
-          <h2 className="text-3xl font-black text-white italic mb-8">SabanOS Access</h2>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-6 italic">SabanOS Studio</h2>
           <input 
             type="password" maxLength={4} value={inputCode}
             onChange={(e) => setInputCode(e.target.value)}
-            className="w-full bg-black/40 border-2 border-white/10 rounded-2xl p-6 text-center text-4xl tracking-[15px] text-green-500 outline-none focus:border-green-500 mb-8"
+            className="w-full bg-slate-100 dark:bg-black/40 border-2 border-slate-200 dark:border-white/10 rounded-2xl p-6 text-center text-4xl tracking-[15px] text-green-600 outline-none focus:border-green-500 mb-8 transition-all"
             placeholder="****"
           />
-          <button onClick={handleVerify} className="w-full bg-green-500 text-black font-black py-5 rounded-2xl text-xl hover:bg-green-400 transition-all uppercase tracking-tighter">Enter Brain</button>
+          <button onClick={handleVerify} className="w-full bg-green-600 text-white font-black py-5 rounded-2xl text-xl hover:shadow-lg transition-all">ENTER STUDIO</button>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#020617] text-white font-sans selection:bg-green-500/30" dir="rtl">
+    <main className={`min-h-screen ${isDarkMode ? 'bg-[#020617] text-white' : 'bg-[#F8FAFC] text-slate-900'} transition-colors duration-500 font-sans`} dir="rtl">
       <Navigation />
       
-      <div className="pt-28 px-8 max-w-[1600px] mx-auto pb-20">
+      <div className="pt-28 px-8 max-w-[1650px] mx-auto pb-20">
         
-        {/* TOP INTERFACE */}
-        <div className="flex items-center justify-between mb-12 bg-white/5 p-10 rounded-[4rem] border border-white/10 backdrop-blur-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10"><Activity size={120} /></div>
-          <div className="flex items-center gap-8 relative z-10">
-            <div className="relative group">
-              <div className="w-28 h-28 rounded-[2.5rem] bg-black/60 border-2 border-green-500/30 overflow-hidden flex items-center justify-center">
-                {businessData?.logoUrl ? <img src={businessData.logoUrl} className="w-full h-full object-cover" /> : <span className="text-5xl font-black italic text-green-500">{businessData?.businessName?.[0]}</span>}
-              </div>
-              <button onClick={() => fileInputRef.current?.click()} className="absolute -bottom-2 -right-2 bg-white text-black p-2.5 rounded-full hover:bg-green-500 transition-colors shadow-xl">
-                <Paperclip size={18} />
-              </button>
-              <input type="file" ref={fileInputRef} onChange={(e) => {/* לוגיקת העלאה */}} className="hidden" />
+        {/* TOP STUDIO BAR */}
+        <div className="flex items-center justify-between mb-10 bg-white dark:bg-white/5 p-8 rounded-[3rem] border border-slate-200 dark:border-white/10 shadow-sm backdrop-blur-md">
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 rounded-[2rem] bg-green-500/10 border-2 border-green-500/20 overflow-hidden flex items-center justify-center shadow-inner">
+              {businessData?.logoUrl ? <img src={businessData.logoUrl} className="w-full h-full object-cover" /> : <span className="text-4xl font-black italic text-green-600">{businessData?.businessName?.[0]}</span>}
             </div>
             <div>
-              <h1 className="text-5xl font-black italic tracking-tighter mb-2">מספרת {businessData?.businessName}</h1>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(34,197,94,1)]" />
-                <p className="text-green-500 font-bold uppercase tracking-widest text-sm">Smart AI Brain: Active & Listening</p>
-              </div>
+              <h1 className="text-4xl font-black italic tracking-tighter">מספרת {businessData?.businessName}</h1>
+              <p className="text-green-600 font-bold flex items-center gap-2 text-sm uppercase tracking-widest">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> SabanOS Smart AI Online
+              </p>
             </div>
           </div>
+          
+          <button onClick={toggleTheme} className="p-4 rounded-3xl bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 hover:scale-110 transition-all">
+            {isDarkMode ? <Sun className="text-yellow-400" /> : <Moon className="text-blue-600" />}
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* LEFT: CALENDAR & TRAINING */}
-          <div className="lg:col-span-8 space-y-10">
-            
-            {/* BRAIN TRAINING CANVAS */}
-            <div className="bg-white/5 border border-white/10 rounded-[3.5rem] p-10 backdrop-blur-xl">
-              <div className="flex items-center gap-4 mb-8">
-                <Settings className="text-green-500" size={28} />
-                <h2 className="text-2xl font-black italic">עריכת זיכרון המוח</h2>
+          {/* LEFT COLUMN: TRAINING & MEMORY */}
+          <div className="lg:col-span-4 space-y-8">
+            <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3rem] p-8 shadow-sm">
+              <div className="flex items-center gap-3 mb-6">
+                <Brain className="text-green-600" size={24} />
+                <h2 className="text-xl font-black italic">עריכת מוח</h2>
               </div>
               <textarea 
                 value={extraContext}
                 onChange={(e) => setExtraContext(e.target.value)}
-                className="w-full h-40 bg-black/40 border border-white/10 rounded-[2.5rem] p-8 text-xl text-white/80 outline-none focus:border-green-500 mb-8 transition-all resize-none shadow-inner"
-                placeholder="הזן עדכונים כאן... (למשל: תספורת עולה 60 ש''ח)"
+                className="w-full h-40 bg-slate-50 dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-3xl p-6 outline-none focus:border-green-500 mb-6 transition-all"
+                placeholder="הזן הנחיות ל-AI..."
               />
-              <button onClick={saveBrainUpdate} className="w-full bg-white/10 border border-white/10 text-white font-black py-6 rounded-3xl flex items-center justify-center gap-4 hover:bg-green-500 hover:text-black transition-all group">
-                <Brain className="group-hover:rotate-12 transition-transform" />
-                שמור וסנכרן למוח
+              <button onClick={() => saveBrainUpdate(extraContext)} className="w-full bg-green-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-3 shadow-lg hover:bg-green-700 transition-all">
+                <Save size={20} /> סנכרן נתונים
               </button>
             </div>
 
-            {/* MONTHLY CALENDAR */}
-            <div className="bg-white/5 border border-white/10 rounded-[3.5rem] p-10 backdrop-blur-xl">
-              <div className="flex items-center justify-between mb-10">
-                <div className="flex items-center gap-4">
-                  <Calendar className="text-green-500" size={28} />
-                  <h2 className="text-2xl font-black italic text-white">לוח תורים חודשי</h2>
-                </div>
-                <div className="flex items-center gap-4 bg-black/40 p-2 rounded-2xl border border-white/5">
-                  <button className="p-2 hover:text-green-500"><ChevronRight /></button>
-                  <span className="font-bold px-4">{currentMonth.toLocaleString('he-IL', { month: 'long', year: 'numeric' })}</span>
-                  <button className="p-2 hover:text-green-500"><ChevronLeft /></button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-7 gap-4">
-                {['א','ב','ג','ד','ה','ו','ש'].map(day => (
-                  <div key={day} className="text-center text-white/30 font-black text-sm mb-4">{day}</div>
-                ))}
-                {calendarDays.map(day => (
-                  <motion.button 
-                    key={day} 
-                    whileHover={{ scale: 1.05 }}
-                    onClick={() => typeToCanvas(`עמאר, בחרת את ה-${day} לחודש. אילו שעות תרצה לפתוח לקביעת תורים?`)}
-                    className="aspect-square bg-white/5 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-1 hover:bg-green-500 hover:text-black transition-all relative group"
-                  >
-                    <span className="text-lg font-black">{day}</span>
-                    <div className="w-1 h-1 bg-green-500 rounded-full group-hover:bg-black opacity-40" />
-                  </motion.button>
+            {/* MEMORY TABLE */}
+            <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3rem] p-8 shadow-sm overflow-hidden">
+              <h3 className="text-lg font-black italic mb-6 flex items-center gap-2 opacity-50"><Activity size={18}/> טבלת עדכוני מוח</h3>
+              <div className="max-h-[350px] overflow-y-auto space-y-3 pr-2">
+                {businessData?.trainingHistory?.map((update: any, i: number) => (
+                  <div key={i} className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 flex justify-between items-start group">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium opacity-80 mb-1">{update.text}</p>
+                      <span className="text-[10px] uppercase font-bold opacity-30">{update.date}</span>
+                    </div>
+                    <button onClick={() => setExtraContext(update.text)} className="p-2 text-green-600 opacity-0 group-hover:opacity-100 transition-all">
+                      <Edit3 size={14} />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* RIGHT: THE LIVE AI CANVAS SIMULATOR */}
+          {/* MIDDLE COLUMN: SMART CALENDAR */}
           <div className="lg:col-span-4">
-            <div className="sticky top-28 bg-[#0b141a] border-[14px] border-slate-900 rounded-[4rem] h-[850px] shadow-2xl flex flex-col overflow-hidden">
-              <div className="bg-[#1f2c34] p-8 flex items-center gap-4 border-b border-white/5">
-                <div className="w-14 h-14 rounded-full bg-green-500 flex items-center justify-center font-black text-black text-2xl italic shadow-2xl">AI</div>
+            <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3.5rem] p-10 shadow-sm h-full">
+              <div className="flex items-center justify-between mb-10">
+                <h2 className="text-2xl font-black italic flex items-center gap-3"><Calendar className="text-green-600" /> יומן תורים</h2>
+                <Plus className="text-green-600 cursor-pointer" />
+              </div>
+              <div className="grid grid-cols-7 gap-3">
+                {daysInMonth.map(day => (
+                  <button 
+                    key={day} 
+                    onClick={() => {
+                      setSelectedDate(day);
+                      typeToCanvas(`עמאר, פתחתי את היומן ל-${day} בחודש. אילו שעות לסמן כפנויות?`);
+                    }}
+                    className={`aspect-square rounded-2xl flex items-center justify-center font-black text-lg transition-all ${selectedDate === day ? 'bg-green-600 text-white shadow-lg' : 'bg-slate-50 dark:bg-white/5 hover:bg-green-100 dark:hover:bg-green-900/30'}`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+              {selectedDate && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 p-6 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-[2rem]">
+                  <p className="text-sm font-bold text-green-700 dark:text-green-400">הגדרת יום: {selectedDate} לחודש</p>
+                  <div className="flex gap-2 mt-4">
+                    {['10:00', '14:00', '19:00'].map(t => (
+                      <button key={t} className="px-4 py-2 bg-white dark:bg-black/40 border border-green-200 dark:border-green-900/50 rounded-xl text-xs font-black">
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN: THE LIVE CANVAS (WhatsApp Simulation) */}
+          <div className="lg:col-span-4 h-full min-h-[750px]">
+            <div className="bg-white dark:bg-[#0b141a] border-4 border-slate-200 dark:border-white/10 rounded-[4rem] h-full shadow-2xl overflow-hidden flex flex-col relative">
+              <div className="bg-slate-100 dark:bg-[#1f2c34] p-8 flex items-center gap-4 border-b border-slate-200 dark:border-white/5">
+                <div className="w-14 h-14 rounded-full bg-green-600 flex items-center justify-center font-black text-white text-2xl italic shadow-lg">AI</div>
                 <div>
-                  <h3 className="text-white font-black text-xl">SabanOS Core</h3>
-                  <p className="text-xs text-green-500 font-bold tracking-widest uppercase">Live Thinking Mode</p>
+                  <h3 className="font-black text-xl">WhatsApp AI Simulator</h3>
+                  <p className="text-[10px] text-green-600 font-bold tracking-widest uppercase">Live Interactive Canvas</p>
                 </div>
               </div>
 
-              <div className="flex-1 p-8 bg-black/20 relative">
-                <div className="space-y-6">
-                   {/* הודעת הקנבס של ה-AI - טקסט נקי ומקצועי */}
-                   <AnimatePresence>
-                     {aiCanvasText && (
-                       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-8 bg-green-500/10 border-l-4 border-green-500 rounded-r-3xl">
-                         <p className="text-xl font-medium leading-relaxed text-green-500 font-mono">
-                           {aiCanvasText}
-                           <span className="inline-block w-2 h-5 bg-green-500 animate-pulse ml-1" />
-                         </p>
-                       </motion.div>
-                     )}
-                   </AnimatePresence>
-
-                   <div className="pt-10 opacity-30">
-                      <ChatInterface trialId={params.trialId} />
-                   </div>
+              <div className="flex-1 p-8 overflow-y-auto space-y-6">
+                <AnimatePresence>
+                  {aiCanvasText && (
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-8 bg-green-600/5 dark:bg-green-600/10 border-r-4 border-green-600 rounded-l-[2rem]">
+                      <p className="text-xl font-bold leading-relaxed text-green-700 dark:text-green-400 font-mono italic">
+                        {aiCanvasText}
+                        <span className="inline-block w-2 h-6 bg-green-600 animate-pulse ml-2 align-middle" />
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                
+                {/* דמה לשיחת וואטסאפ */}
+                <div className="space-y-4 opacity-40 select-none pointer-events-none">
+                  <div className="bg-slate-200 dark:bg-[#1f2c34] p-3 rounded-2xl rounded-tr-none text-xs max-w-[80%] mr-auto">היי, אני רוצה לקבוע תור לתספורת מחר</div>
+                  <div className="bg-green-600 p-3 rounded-2xl rounded-tl-none text-white text-xs max-w-[80%] ml-auto">שלום! מחר בשעה 10:00 פנוי לי. לרשום אותך?</div>
                 </div>
-
-                {/* QUICK ACTIONS */}
-                <div className="absolute bottom-8 left-8 right-8 grid grid-cols-2 gap-4">
-                  <button onClick={() => typeToCanvas("מנתח נתוני יומן... יש לך 3 תורים פנויים מחר בבוקר. להציע אותם ללקוחות בוואטסאפ?")} className="bg-white/5 border border-white/10 p-4 rounded-2xl text-[10px] font-black uppercase tracking-tighter hover:bg-white/10">סטטוס יומן</button>
-                  <button onClick={() => typeToCanvas("סיכום יום: 12 לקוחות טופלו, הכנסה משוערת 1,450 ש''ח. המוח מסונכרן.")} className="bg-white/5 border border-white/10 p-4 rounded-2xl text-[10px] font-black uppercase tracking-tighter hover:bg-white/10">ביצועי AI</button>
+              </div>
+              
+              <div className="p-8 bg-slate-50 dark:bg-white/5 border-t border-slate-200 dark:border-white/5">
+                <div className="flex gap-4">
+                  <div className="flex-1 bg-white dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-2xl p-4 text-sm text-slate-400">
+                    סימולציה פעילה...
+                  </div>
+                  <div className="bg-green-600 p-4 rounded-2xl text-white">
+                    <MessageSquare size={20} />
+                  </div>
                 </div>
               </div>
             </div>
