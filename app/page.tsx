@@ -3,153 +3,159 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Bell, Zap, MessageCircle, Star, CheckCircle2, 
-  ArrowLeft, Rocket, ShieldCheck, Smartphone 
+  Rocket, Zap, Star, CheckCircle2, 
+  Smartphone, MessageSquare, Bell, Calendar, 
+  ArrowLeft, MousePointer2 
 } from "lucide-react";
 import Link from "next/link";
 
-// ייבוא רכיבים
+// רכיבים
 import Navigation from "../components/Navigation";
 import ContactSection from "../components/ContactSection";
 
+const techLogos = [
+  { name: "Google", src: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" },
+  { name: "Microsoft", src: "https://upload.wikimedia.org/wikipedia/commons/9/96/Microsoft_logo_%282012%29.svg" },
+  { name: "Firebase", src: "https://www.vectorlogo.zone/logos/firebase/firebase-icon.svg" },
+  { name: "Vercel", src: "https://www.svgrepo.com/show/342111/vercel.svg" },
+  { name: "OneSignal", src: "https://upload.wikimedia.org/wikipedia/commons/f/f1/OneSignal_logo.svg" },
+  { name: "WhatsApp", src: "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" },
+];
+
 const reviews = [
-  { name: "יוסי כהן", role: "בעל 'כהן לוגיסטיקה'", content: "הכלי הזה פשוט הכיר לי את כל הצדדים של העסק בצורה מקצועית. האוטומציה חוסכת לי שעות בכל יום.", stars: 5 },
-  { name: "מיכל לוי", role: "מנהלת 'מכון יופי בוטיק'", content: "הלקוחות בטוחות שהן מדברות עם מזכירה אישית. ה-AI סוגר לי תורים גם ב-2 בלילה!", stars: 5 },
-  { name: "דניאל אברהם", role: "בעל 'דניאל חומרי בניין'", content: "היכולת לסנכרן בין וואטסאפ ליומן היא גיים צ'יינג'ר. פשוט מדהים.", stars: 5 },
-  { name: "שרה משארוה", role: "בעלת 'קליניקת שירה'", content: "סוף סוף אני יכולה להתרכז בטיפולים ולא בטלפונים. המערכת הכי טובה בשוק.", stars: 5 }
+  { name: "אבי ביטון", role: "מספרת VIP", text: "לא האמנתי שיש כלי כזה. המערכת שראמי בנה לי מנהלת תורים אוטומטית. זה עובד 24/7 בזמן שאני ישן!", stars: 5 },
+  { name: "מיכל לוי", role: "סטודיו פילאטיס", text: "הכלי פשוט הכיר לי את כל הצדדים של העסק בצורה מקצועית. הלקוחות קובעות ב-3 בלילה והיומן מתמלא לבד.", stars: 5 },
+  { name: "עמאר גוהר", role: "יופי וטיפוח", text: "מהרגע שנרשמתי, הכל רץ. הלוגו שלי מופיע, ההתראות מגיעות לנייד, וה-AI סוגר לי לקוחות בוואטסאפ.", stars: 5 },
+  { name: "דניאל אברהם", role: "חומרי בניין", text: "ייעוץ שיווקי וטכנולוגי ברמה הכי גבוהה שיש. המערכת חוסכת לי מזכירה וזמן יקר.", stars: 5 }
 ];
 
 export default function HomePage() {
   const [chatStep, setChatStep] = useState(0);
-  const [isReady, setIsReady] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const win = window as any;
-      win.OneSignalDeferred = win.OneSignalDeferred || [];
-      win.OneSignalDeferred.push(async function(OneSignal: any) {
-        await OneSignal.init({ appId: "91e6c6f7-5fc7-47d0-b114-b1694f408258" });
-      });
-
-      const interval = setInterval(() => {
-        setChatStep((prev) => (prev < 1 ? prev + 1 : 0));
-      }, 4500);
-      return () => clearInterval(interval);
-    }
-  }, []);
-
-  const handleActivation = () => {
-    if (audioRef.current) {
-      audioRef.current.play().then(() => {
-        audioRef.current?.pause();
-        setIsReady(true);
-      }).catch(() => {});
-    }
-    const win = window as any;
-    if (win.OneSignal) win.OneSignal.showNativePrompt();
-  };
+    const interval = setInterval(() => {
+      setIsTyping(true);
+      setTimeout(() => {
+        setIsTyping(false);
+        setChatStep((prev) => (prev < 3 ? prev + 1 : 0));
+        if (chatStep < 3) {
+          const audio = new Audio("/sounds/whatsapp.mp3");
+          audio.play().catch(() => {});
+        }
+      }, 1500);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [chatStep]);
 
   return (
-    <main className="min-h-screen bg-white dark:bg-[#020617] text-right transition-colors duration-300" dir="rtl">
+    <main className="min-h-screen bg-slate-50 dark:bg-[#020617] text-right transition-colors duration-300" dir="rtl">
       <Navigation />
-      <audio ref={audioRef} src="/sounds/whatsapp.mp3" preload="auto" />
 
-      {/* כפתור הפעלה צף - רק אם המשתמש עוד לא דורך את האודיו */}
-      {!isReady && (
-        <button
-          onClick={handleActivation}
-          className="fixed bottom-10 left-6 z-[999] bg-green-500 text-black px-6 py-4 rounded-3xl shadow-2xl animate-bounce font-black flex items-center gap-2 border-2 border-white/20"
-        >
-          <Bell size={20} /> הפעל חוויה מלאה
-        </button>
-      )}
-
-      {/* --- HERO SECTION --- */}
-      <section className="pt-32 pb-20 max-w-7xl mx-auto px-6 flex flex-col lg:flex-row items-center gap-16 overflow-hidden">
-        <div className="flex-1 space-y-8 z-10">
-          <div className="inline-block px-4 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-black uppercase tracking-widest border border-green-500/20">
-            AI Business Revolution
-          </div>
-          <h1 className="text-6xl md:text-8xl font-black dark:text-white leading-none tracking-tighter italic">
-            Saban<span className="text-green-500">OS</span>
-          </h1>
-          <p className="text-2xl text-slate-600 dark:text-slate-400 font-medium max-w-xl">
-            הופכים את הוואטסאפ למנהל העסק שלך. אוטומציה חכמה, סנכרון יומנים וניהול לקוחות 24/7.
-          </p>
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-16 px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <Link 
-              href="/trial"
-              className="w-full sm:w-auto px-12 py-6 bg-green-500 text-black font-black rounded-[2rem] text-2xl shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-3"
-            >
-              התחל 10 ימי ניסיון <Rocket size={24} />
-            </Link>
-            <p className="text-slate-400 font-bold italic text-sm">קבל 15% הנחה בהרשמה היום!</p>
-          </div>
-        </div>
-
-        {/* SIMULATOR */}
-        <div className="flex-1 relative w-full max-w-[400px]">
-          <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[600px] w-full shadow-2xl bg-[#0b141a] overflow-hidden">
-             {/* תוכן הווטסאפ מהקוד הקודם */}
-             <div className="bg-[#1f2c34] p-4 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-[10px] font-bold text-black italic">AI</div>
-              <div className="text-white text-[12px] font-bold">העוזר של SabanOS</div>
+          <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} className="flex-1 space-y-8 z-10">
+            <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-black uppercase tracking-widest border border-green-500/20">
+              <Zap size={14} /> AI Business Revolution
             </div>
-            <div className="p-4 space-y-4">
-              <AnimatePresence mode="wait">
-                {chatStep === 0 && (
-                  <motion.div key="0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#1f2c34] p-3 rounded-2xl rounded-tr-none text-white text-sm mr-auto max-w-[80%] shadow-lg">
-                    שלום! רוצה לקבוע תור או לראות קטלוג? אני כאן בשבילך.
-                  </motion.div>
-                )}
-                {chatStep === 1 && (
-                  <motion.div key="1" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#005c4b] p-3 rounded-2xl rounded-tl-none text-white text-sm ml-auto max-w-[80%] shadow-lg">
-                    כן, אני רוצה לקבוע תור למחר בבוקר.
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* --- תהליך ההרשמה --- */}
-      <section className="py-24 bg-slate-50 dark:bg-slate-900/50">
-        <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-4xl font-black text-center mb-16 dark:text-white">איך זה <span className="text-green-500">עובד?</span></h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-            {[
-              { title: "נרשמים למערכת", desc: "ממלאים פרטי עסק בטופס הדיגיטלי שלנו ב-3 שלבים פשוטים.", icon: <Smartphone className="text-blue-500 mx-auto mb-4" /> },
-              { title: "ה-AI לומד אותך", desc: "המערכת מסנכרנת את היומן והמחירון שלך ובונה לך מוח עסקי.", icon: <Zap className="text-yellow-500 mx-auto mb-4" /> },
-              { title: "העסק רץ לבד", desc: "הלקוחות סוגרים תורים בוואטסאפ ואתה מקבל התראות פוש לנייד.", icon: <ShieldCheck className="text-green-500 mx-auto mb-4" /> }
-            ].map((step, i) => (
-              <div key={i} className="relative p-8 bg-white dark:bg-white/5 rounded-[2.5rem] border border-slate-200 dark:border-white/10">
-                {step.icon}
-                <h3 className="text-xl font-bold mb-2 dark:text-white">{step.title}</h3>
-                <p className="text-slate-500 dark:text-slate-400">{step.desc}</p>
-                {i < 2 && <ArrowLeft className="hidden md:block absolute -left-6 top-1/2 -translate-y-1/2 text-slate-300" size={32} />}
+            <h1 className="text-6xl md:text-8xl font-black dark:text-white leading-tight tracking-tighter italic">
+              העסק שלך <br /> <span className="text-green-500 underline decoration-white/10">עובד בשבילך.</span>
+            </h1>
+            <p className="text-xl text-slate-600 dark:text-slate-400 max-w-xl leading-relaxed font-medium">
+              ניהול תורים, קטלוג מוצרים וסנכרון יומנים מלא ישירות בוואטסאפ. המערכת שהופכת פניות למזומן, 24/7.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              <Link href="/trial" className="w-full sm:w-auto px-12 py-6 bg-green-500 text-black font-black rounded-[2rem] text-2xl shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-3">
+                התחל ניסיון חינם <Rocket size={24} />
+              </Link>
+              <div className="flex items-center gap-2 text-slate-400 font-bold italic">
+                <CheckCircle2 size={18} className="text-green-500" /> קבל 15% הנחה היום
               </div>
-            ))}
-          </div>
+            </div>
+          </motion.div>
+
+          {/* iPHONE SIMULATOR */}
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex-1 relative z-10">
+            <div className="relative mx-auto border-[12px] border-slate-900 rounded-[3.5rem] h-[650px] w-[320px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] bg-black overflow-hidden border-b-[20px]">
+              <div className="h-full bg-[#0b141a] flex flex-col font-sans">
+                <div className="bg-[#1f2c34] p-5 pt-10 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center font-black text-black italic">AI</div>
+                  <div>
+                    <p className="text-white text-xs font-bold">שירה קוסמטיקה - SabanOS</p>
+                    <p className="text-[10px] text-green-500">{isTyping ? "מקליד/ה..." : "מחובר/ת"}</p>
+                  </div>
+                </div>
+                <div className="flex-1 p-4 space-y-4">
+                  <AnimatePresence>
+                    {chatStep >= 0 && (
+                      <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#1f2c34] p-3 rounded-2xl rounded-tr-none text-white text-[11px] max-w-[85%] mr-auto shadow-md">
+                        שלום! אני העוזר של שירה. רוצה לקבוע תור לטיפול פנים?
+                      </motion.div>
+                    )}
+                    {chatStep >= 1 && (
+                      <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-[#005c4b] p-3 rounded-2xl rounded-tl-none text-white text-[11px] max-w-[80%] ml-auto shadow-md">
+                        כן, יש מקום למחר?
+                      </motion.div>
+                    )}
+                    {chatStep >= 2 && (
+                      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#1f2c34] p-3 rounded-2xl rounded-tr-none text-white text-[11px] max-w-[85%] mr-auto border border-green-500/30">
+                        בוודאי! מצאתי לך מקום ב-10:00. רשמתי אותך ביומן! ✅
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* --- ביקורות בעלי עסקים --- */}
+      {/* TECH TICKER - לוגואים רצים */}
+      <div className="py-12 bg-white/5 border-y border-white/5 overflow-hidden">
+        <div className="flex gap-12 animate-infinite-scroll">
+          {[...techLogos, ...techLogos].map((logo, i) => (
+            <img key={i} src={logo.src} alt={logo.name} className="h-8 opacity-30 grayscale hover:grayscale-0 hover:opacity-100 transition-all cursor-pointer" />
+          ))}
+        </div>
+      </div>
+
+      {/* REVIEWS SECTION */}
       <section className="py-24 max-w-7xl mx-auto px-6">
-        <h2 className="text-4xl font-black text-center mb-16 dark:text-white italic">מה אומרים <span className="text-green-500">הלקוחות?</span></h2>
+        <div className="text-center mb-16 space-y-4">
+          <h2 className="text-4xl font-black italic dark:text-white">בעלי עסקים <span className="text-green-500 underline">משבחים</span></h2>
+          <p className="text-slate-500">הצטרפו למאות עסקים שהפכו את הוואטסאפ למכונת עבודה</p>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {reviews.map((rev, i) => (
-            <div key={i} className="bg-white dark:bg-white/5 p-6 rounded-[2rem] border border-slate-200 dark:border-white/10 flex flex-col gap-4 shadow-sm">
+            <div key={i} className="bg-white dark:bg-white/5 p-8 rounded-[2.5rem] border border-slate-200 dark:border-white/10 flex flex-col gap-4 hover:scale-105 transition-all shadow-xl">
               <div className="flex gap-1 text-yellow-500">
                 {[...Array(rev.stars)].map((_, s) => <Star key={s} size={16} fill="currentColor" />)}
               </div>
-              <p className="text-slate-700 dark:text-slate-300 font-medium italic">"{rev.content}"</p>
-              <div className="mt-auto">
+              <p className="text-slate-700 dark:text-slate-300 font-medium italic leading-relaxed">"{rev.text}"</p>
+              <div className="mt-auto pt-4 border-t border-slate-100 dark:border-white/5">
                 <p className="font-black dark:text-white">{rev.name}</p>
-                <p className="text-xs text-slate-500">{rev.role}</p>
+                <p className="text-xs text-green-500 font-bold uppercase">{rev.role}</p>
               </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section className="py-24 bg-green-500 dark:bg-green-600 rounded-[4rem] mx-6 mb-24 overflow-hidden relative">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
+          {[
+            { step: "01", title: "הרשמה מהירה", desc: "ממלאים פרטי עסק בטופס הדיגיטלי שלנו ב-3 שלבים." },
+            { step: "02", title: "ה-AI לומד אותך", desc: "סנכרון יומנים, מחירונים והגדרת קול המותג שלך." },
+            { step: "03", title: "התחלת עבודה", desc: "הלקוחות סוגרים תורים ואתה מקבל התראות פוש לנייד." }
+          ].map((item, i) => (
+            <div key={i} className="text-black">
+              <div className="text-5xl font-black opacity-20 mb-4">{item.step}</div>
+              <h3 className="text-2xl font-black mb-2 italic">{item.title}</h3>
+              <p className="font-bold opacity-80">{item.desc}</p>
             </div>
           ))}
         </div>
