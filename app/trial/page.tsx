@@ -1,18 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import nextDynamic from "next/dynamic";
 import Navigation from "../../components/Navigation";
-
-export const dynamic = "force-dynamic";
-
-const TrialRegistrationForm = nextDynamic(
-  () => import("../../components/TrialRegistrationForm"),
-  { 
-    ssr: false,
-    loading: () => <div className="h-96 w-full animate-pulse bg-white/5 rounded-3xl" />
-  }
-);
+import TrialRegistrationForm from "../../components/TrialRegistrationForm";
 
 export default function TrialPage() {
   const [mounted, setMounted] = useState(false);
@@ -21,16 +11,29 @@ export default function TrialPage() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return <div className="min-h-screen bg-[#020617]" />;
+  // מניעת שגיאות Hydration - מציג רקע כהה עד שהצד לקוח מוכן
+  if (!mounted) {
+    return <div className="min-h-screen bg-[#020617]" />;
+  }
 
   return (
     <main className="min-h-screen bg-[#020617] text-white overflow-x-hidden" dir="rtl">
       <Navigation />
+      
+      {/* עיצוב רקע דקורטיבי למראה פרימיום */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-green-500/10 blur-[120px] pointer-events-none" />
+
       <div className="relative z-10 pt-32 pb-20 px-4 max-w-4xl mx-auto flex flex-col items-center">
-        <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter mb-12">
-          התחלת 10 ימי <span className="text-green-500">התנסות</span>
-        </h1>
-        <TrialRegistrationForm />
+        <header className="text-center mb-12">
+          <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter mb-4">
+            התחלת 10 ימי <span className="text-green-500 underline decoration-white/10">התנסות</span>
+          </h1>
+          <p className="text-white/50 text-lg">הצטרפו למערכת SabanOS והפכו את העסק לחכם יותר</p>
+        </header>
+
+        <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <TrialRegistrationForm />
+        </div>
       </div>
     </main>
   );
