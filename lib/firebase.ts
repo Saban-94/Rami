@@ -1,7 +1,7 @@
+// lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,19 +13,10 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// אתחול Singleton שמונע אתחול כפול
+// אתחול Singleton שזמין תמיד
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
+// ייצוא ישיר - השרת יוכל להשתמש בהם בזמן ה-Build
 export const db = getFirestore(app);
 export const auth = getAuth(app);
-
-// אתחול Analytics בצורה בטוחה (רק בדפדפן)
-export const initAnalytics = async () => {
-  if (typeof window !== "undefined") {
-    const supported = await isSupported();
-    if (supported) return getAnalytics(app);
-  }
-  return null;
-};
-
 export { app };
