@@ -5,7 +5,72 @@ import { db } from "../../../lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import Navigation from "../../../components/Navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
+import { "use client";
+
+import React, { useState, useEffect } from "react";
+import { db } from "../../../lib/firebase"; // וודא שהקובץ הזה תקין
+import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { motion, AnimatePresence } from "framer-motion";
+
+export default function SabanOSV3Studio({ params }: { params: { trialId: string } }) {
+  const [businessData, setBusinessData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // --- 1. OneSignal Fix ---
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const OneSignal = (window as any).OneSignal;
+      if (OneSignal) {
+        OneSignal.push(async () => {
+          await OneSignal.init({
+            appId: "767878273802-1p5oifchiurnkhv9g4dfosn26snseh30",
+            allowLocalhostAsSecureOrigin: true,
+          });
+        });
+      }
+    }
+  }, []);
+
+  // --- 2. Firestore Realtime Fix ---
+  useEffect(() => {
+    if (!params.trialId) return;
+
+    // שימוש ב-onSnapshot להאזנה חיה, עם טיפול בשגיאות
+    const unsub = onSnapshot(
+      doc(db, "trials", params.trialId),
+      (snap) => {
+        if (snap.exists()) {
+          setBusinessData(snap.data());
+        } else {
+          setError("Trial not found");
+        }
+      },
+      (err) => {
+        console.error("Firestore Sync Error:", err);
+        setError("שגיאת סנכרון נתונים");
+      }
+    );
+
+    return () => unsub();
+  }, [params.trialId]);
+
+  if (error) return <div className="p-20 text-red-500 font-bold">{error}</div>;
+
+  return (
+    <div className="min-h-screen bg-[#0C0C0D] text-white p-12">
+      <AnimatePresence>
+        {businessData ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <h1 className="text-4xl font-black italic">{businessData.businessName}</h1>
+            <p className="opacity-50 mt-2">SabanOS Studio v3.0 | Live Mode</p>
+          </motion.div>
+        ) : (
+          <div className="animate-pulse">טוען נתונים...</div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
   Smartphone, Layout, Sparkles, Rocket, 
   Check, ChevronLeft, Calendar, Clock, Lock, 
   Sun, Moon, Coffee, BookOpen, Scissors, 
