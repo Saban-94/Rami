@@ -1,155 +1,213 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { db } from "../../../lib/firebase";
-import { doc, onSnapshot } from "firebase/firestore";
-import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Send, Lightbulb, Smartphone, Layout, Rocket } from "lucide-react";
+import { doc, getDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import Navigation from "../../../components/Navigation";
+import { motion, AnimatePresence, useAnimationControls } from "framer-motion";
+import confetti from "canvas-confetti";
+import { 
+  Smartphone, Layout, Palette, Sparkles, Rocket, 
+  Check, ChevronLeft, Calendar, Clock, Lock, 
+  Sun, Moon, Coffee, BookOpen, Scissors, 
+  Stethoscope, Briefcase, ChevronRight, User, Send
+} from "lucide-react";
+import { format, addDays, isSameDay, startOfDay } from "date-fns";
+import { he } from "date-fns/locale";
 
-export default function SabanOSMentorStudio({ params }: { params: { trialId: string } }) {
+const CATEGORIES = [
+  { id: 'barber', name: 'יופי וטיפוח', icon: <Scissors size={18}/> },
+  { id: 'food', name: 'מזון ומשקאות', icon: <Coffee size={18}/> },
+  { id: 'retail', name: 'חנויות וספרים', icon: <BookOpen size={18}/> },
+  { id: 'medical', name: 'רפואה וקליניקות', icon: <Stethoscope size={18}/> },
+  { id: 'legal', name: 'משרדים וייעוץ', icon: <Briefcase size={18}/> },
+];
+
+export default function SabanOSStudioV2({ params }: { params: { trialId: string } }) {
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [inputCode, setInputCode] = useState("");
   const [businessData, setBusinessData] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([
-    { role: 'ai', text: "שלום! אני ג'ימיני, המדריך האישי שלך ב-SabanOS. בוא נלמד איך לבנות את האפליקציה שלך." }
-  ]);
-  const [inputValue, setInputValue] = useState("");
-
-  // --- 1. מנגנון ההדרכה של ג'ימיני ---
-  // רשימת טיפים ופקודות שה-AI מציע למשתמש לפי הקשר
-  const mentorTips = [
-    { title: "עיצוב דף הבית", prompt: "ג'ימיני, תעצב לי דף נחיתה יוקרתי עם תמונת אווירה של מספרה." },
-    { title: "יצירת קטלוג", prompt: "תוסיף לקטלוג שלי תספורת גבר ב-100 ש״ח ועיצוב זקן ב-50 ש״ח." },
-    { title: "חיבור יומן", prompt: "איך אני מסנכרן את היומן שלי ל-Google Calendar?" },
-  ];
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [selectedCat, setSelectedCat] = useState(CATEGORIES[0]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [aiCanvasText, setAiCanvasText] = useState("");
+  
+  const badgeControls = useAnimationControls();
+  const weekDays = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(startOfDay(new Date()), i)), []);
 
   useEffect(() => {
-    if (!params.trialId) return;
-    const unsub = onSnapshot(doc(db, "trials", params.trialId), (snap) => {
-      if (snap.exists()) setBusinessData(snap.data());
-    });
-    return () => unsub();
+    const fetchDoc = async () => {
+      try {
+        const docRef = doc(db, "trials", params.trialId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) setBusinessData(snap.data());
+      } catch (err) { console.error("Firebase Error:", err); }
+      setLoading(false);
+    };
+    fetchDoc();
   }, [params.trialId]);
 
-  const handleSendMessage = (text: string = inputValue) => {
-    if (!text.trim()) return;
-    const newMessages = [...messages, { role: 'user', text }];
-    setMessages(newMessages);
-    setInputValue("");
+  // לוגיקת ה-Badge הזוהר (AI Heartbeat)
+  useEffect(() => {
+    if (isAuthorized && !isSuccess) {
+      badgeControls.start({
+        opacity: [0.5, 1, 0.5],
+        scale: [1, 1.05, 1],
+        transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+      });
+    }
+  }, [isAuthorized, isSuccess, badgeControls]);
 
-    // סימולציה של תגובת המדריך (כאן יבוא החיבור ל-Gemini API האמיתי)
-    setTimeout(() => {
-      setMessages(prev => [...prev, { 
-        role: 'ai', 
-        text: `הבנתי! אתה רוצה לבצע: "${text}". אני מעדכן את האפליקציה שלך עכשיו...` 
-      }]);
-    }, 1000);
+  const typeToCanvas = (text: string) => {
+    setAiCanvasText("");
+    let i = 0;
+    const interval = setInterval(() => {
+      setAiCanvasText((prev) => prev + text.charAt(i));
+      i++;
+      if (i >= text.length) clearInterval(interval);
+    }, 25);
   };
 
+  const handleVerify = () => {
+    if (inputCode === businessData?.accessCode) {
+      setIsAuthorized(true);
+      typeToCanvas(`מערכת SabanOS Studio באוויר. שלום ${businessData?.businessName || 'עמאר'}. המוח מוכן לעיצוב.`);
+    } else {
+      alert("קוד גישה לא תקין");
+    }
+  };
+
+  const triggerSuccess = () => {
+    setIsSuccess(true);
+    confetti({
+      particleCount: 150,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#22c55e', '#ffffff', '#fbbf24']
+    });
+    typeToCanvas("הפעולה בוצעה בהצלחה! שלחתי עדכון ללקוח והמערכת סונכרנה.");
+  };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-[#020617] text-green-600 font-black animate-pulse text-2xl italic">SabanOS Loading...</div>;
+
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-slate-100 dark:bg-[#020617] flex items-center justify-center p-4">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-12 rounded-[4rem] max-w-md w-full text-center shadow-2xl backdrop-blur-xl">
+          <div className="w-24 h-24 bg-green-500 rounded-[2.5rem] mx-auto mb-8 flex items-center justify-center text-white shadow-xl shadow-green-500/20"><Lock size={40} /></div>
+          <h2 className="text-3xl font-black mb-6 italic tracking-tighter uppercase">Enter Studio</h2>
+          <input type="password" maxLength={4} value={inputCode} onChange={(e) => setInputCode(e.target.value)} className="w-full bg-slate-50 dark:bg-black/40 border-2 border-slate-200 dark:border-white/10 rounded-3xl p-6 text-center text-4xl tracking-[15px] text-green-600 outline-none focus:border-green-500 mb-8" placeholder="****" />
+          <button onClick={handleVerify} className="w-full bg-green-600 text-white font-black py-5 rounded-3xl text-xl shadow-lg hover:bg-green-700 transition-all uppercase">Open Studio</button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <main className="min-h-screen bg-[#0C0C0D] text-white grid grid-cols-1 lg:grid-cols-12 gap-0 overflow-hidden">
+    <main className={`min-h-screen ${isDarkMode ? 'bg-[#020617] text-white' : 'bg-[#F8FAFC] text-slate-900'} transition-colors duration-500 font-sans`} dir="rtl">
+      <Navigation />
       
-      {/* --- צד שמאל: קנבס השיחה והמדריך --- */}
-      <aside className="lg:col-span-4 border-l border-white/10 flex flex-col bg-black/40 backdrop-blur-3xl">
-        <div className="p-8 border-b border-white/10 flex items-center gap-3">
-          <div className="w-10 h-10 bg-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-600/20">
-            <Sparkles size={20} />
+      <div className="pt-28 px-8 max-w-[1850px] mx-auto pb-10 grid grid-cols-1 lg:grid-cols-12 gap-10">
+        
+        {/* --- Sidebar: Categories & Branding --- */}
+        <div className="lg:col-span-3 space-y-6">
+          <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[3.5rem] p-8 shadow-sm">
+            <h2 className="text-xl font-black italic mb-8 flex items-center gap-2">
+              <Layout size={20} className="text-green-500" /> הזרקת תבניות
+            </h2>
+            <div className="space-y-2">
+              {CATEGORIES.map((cat) => (
+                <button key={cat.id} onClick={() => { setSelectedCat(cat); typeToCanvas(`הזרקתי את חבילת ${cat.name}. בוא נראה את ה-Preview באייפון.`); }} 
+                  className={`w-full p-5 rounded-[2rem] flex items-center justify-between transition-all ${selectedCat.id === cat.id ? 'bg-green-600 text-white shadow-lg shadow-green-500/20' : 'bg-slate-50 dark:bg-white/5 hover:border-green-500/30'}`}>
+                  <div className="flex items-center gap-4">
+                    <div className={`p-2 rounded-xl ${selectedCat.id === cat.id ? 'bg-white/20' : 'bg-white dark:bg-white/10'}`}>{cat.icon}</div>
+                    <span className="text-sm font-black italic">{cat.name}</span>
+                  </div>
+                  <ChevronRight size={16} className={selectedCat.id === cat.id ? 'opacity-100' : 'opacity-20'} />
+                </button>
+              ))}
+            </div>
           </div>
-          <div>
-            <h2 className="font-black italic uppercase tracking-tighter">Gemini Mentor</h2>
-            <p className="text-[10px] text-green-500 font-bold uppercase">SabanOS v3.0</p>
-          </div>
-        </div>
-
-        {/* אזור ההודעות */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
-          {messages.map((m, i) => (
-            <motion.div 
-              initial={{ opacity: 0, x: m.role === 'ai' ? 20 : -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              key={i}
-              className={`flex ${m.role === 'ai' ? 'justify-start' : 'justify-end'}`}
-            >
-              <div className={`max-w-[85%] p-5 rounded-[2rem] text-sm font-bold italic leading-relaxed ${
-                m.role === 'ai' ? 'bg-green-600/10 border-r-4 border-green-600 text-green-400' : 'bg-white/5 border border-white/10 text-white'
-              }`}>
-                {m.text}
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* הצעות למידה (Tips) */}
-        <div className="px-6 py-4 bg-white/5 border-t border-white/10">
-          <p className="text-[10px] font-black uppercase opacity-40 mb-3 flex items-center gap-2">
-            <Lightbulb size={12} /> הצעות לביצוע:
-          </p>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
-            {mentorTips.map((tip, i) => (
-              <button 
-                key={i}
-                onClick={() => handleSendMessage(tip.prompt)}
-                className="whitespace-nowrap px-4 py-2 bg-green-600/20 hover:bg-green-600/40 text-green-500 rounded-full text-xs font-black transition-all border border-green-600/20"
-              >
-                {tip.title}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* תיבת קלט */}
-        <div className="p-6 relative">
-          <input 
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="רשום כאן פקודה לג'ימיני..."
-            className="w-full bg-white/5 border border-white/10 rounded-[2rem] p-6 pr-6 pl-16 text-sm outline-none focus:ring-2 ring-green-500 transition-all shadow-inner font-bold italic"
-          />
-          <button 
-            onClick={() => handleSendMessage()}
-            className="absolute left-10 top-1/2 -translate-y-1/2 p-3 bg-green-600 text-white rounded-full shadow-xl hover:scale-110 transition-all"
-          >
-            <Send size={18} />
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className="w-full py-6 bg-slate-900 dark:bg-white text-white dark:text-black rounded-[2.5rem] font-black flex items-center justify-center gap-3 shadow-xl hover:scale-[1.02] transition-all">
+            {isDarkMode ? <Sun size={20}/> : <Moon size={20}/>} {isDarkMode ? 'SWITCH TO LIGHT' : 'SWITCH TO DARK'}
           </button>
         </div>
-      </aside>
 
-      {/* --- צד ימין: ה-Preview של האפליקציה (התוצאה של השיחה) --- */}
-      <section className="lg:col-span-8 flex flex-col items-center justify-center bg-[#0C0C0D] relative">
-         {/* iPhone Preview */}
-         <div className="relative group">
-            <div className="absolute -inset-10 bg-green-500/10 blur-[100px] rounded-full opacity-50 group-hover:opacity-100 transition-opacity" />
-            <div className="w-[320px] h-[660px] bg-black rounded-[4rem] border-[12px] border-slate-900 shadow-2xl relative overflow-hidden z-10 ring-1 ring-white/20">
-               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-3xl z-50" />
-               <div className="w-full h-full bg-white p-8 pt-16 flex flex-col items-center text-black">
-                  <h3 className="text-2xl font-black italic mb-2 tracking-tighter">{businessData?.businessName || "העסק שלך"}</h3>
-                  <div className="w-12 h-1 bg-green-500 mb-10 rounded-full" />
-                  
-                  {/* דוגמה לאלמנטים שה-AI מזריק */}
-                  <div className="w-full space-y-4">
-                    <div className="h-32 bg-slate-100 rounded-3xl animate-pulse flex items-center justify-center text-[10px] font-black uppercase opacity-20 italic">Hero Image Here</div>
-                    <div className="h-14 bg-green-600 rounded-2xl flex items-center justify-center text-white font-black text-xs">הזמנת תור מהירה</div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="h-20 bg-slate-50 rounded-2xl border border-slate-100" />
-                      <div className="h-20 bg-slate-50 rounded-2xl border border-slate-100" />
-                    </div>
-                  </div>
-               </div>
+        {/* --- Center: iPhone Visual Builder --- */}
+        <div className="lg:col-span-5 flex flex-col items-center justify-center relative bg-slate-200/20 dark:bg-black/20 rounded-[5rem] border border-dashed border-slate-300 dark:border-white/5 min-h-[800px]">
+          <div className="w-[320px] h-[640px] bg-black rounded-[4rem] border-[12px] border-slate-800 shadow-2xl relative overflow-hidden ring-4 ring-black/10">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-800 rounded-b-3xl z-30" />
+            <div className={`w-full h-full p-6 pt-14 transition-all duration-700 overflow-y-auto ${isDarkMode ? 'bg-[#0b141a]' : 'bg-white'}`}>
+              
+              <div className="text-center mb-8">
+                <h3 className={`text-2xl font-black italic ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{businessData?.businessName}</h3>
+                <p className="text-[10px] opacity-40 uppercase tracking-widest">Premium {selectedCat.name} App</p>
+              </div>
+
+              {/* Weekly Calendar Block */}
+              <div className="flex gap-2 overflow-x-auto pb-4 no-scrollbar mb-6">
+                {weekDays.map(d => (
+                  <button key={d.toISOString()} onClick={() => setSelectedDate(d)} 
+                    className={`min-w-[60px] py-4 rounded-2xl border transition-all ${isSameDay(d, selectedDate) ? 'bg-green-600 text-white border-green-500 shadow-lg' : 'bg-slate-50 dark:bg-white/5 text-slate-400'}`}>
+                    <span className="text-[10px] block font-bold">{format(d, "EEE", { locale: he })}</span>
+                    <span className="text-lg font-black">{format(d, "d")}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {["09:00", "10:00", "11:00", "12:00", "15:00", "16:00"].map(t => (
+                  <button key={t} onClick={() => setSelectedSlot(t)} 
+                    className={`py-3 rounded-xl text-xs font-bold border transition-all ${selectedSlot === t ? 'bg-slate-900 text-white dark:bg-white dark:text-black scale-105' : 'bg-white/50 dark:bg-white/5 border-slate-100 dark:border-white/5'}`}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+
+              <button disabled={!selectedSlot || isSuccess} onClick={triggerSuccess} 
+                className={`w-full mt-8 py-5 rounded-3xl font-black transition-all ${selectedSlot && !isSuccess ? 'bg-green-600 text-white shadow-xl shadow-green-500/30' : 'bg-slate-100 text-slate-300'}`}>
+                {isSuccess ? 'תור שוריין!' : `קבע ל-${selectedSlot || '...'}`}
+              </button>
             </div>
-         </div>
+            
+            <div className="absolute bottom-0 left-0 right-0 h-20 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-t border-slate-100 dark:border-white/5 flex items-center justify-around px-4">
+              <div className="flex flex-col items-center gap-1 text-green-500"><Smartphone size={18}/><span className="text-[8px] font-black uppercase">Home</span></div>
+              <div className="flex flex-col items-center gap-1 opacity-20"><Calendar size={18}/><span className="text-[8px] font-black uppercase">Book</span></div>
+              <div className="flex flex-col items-center gap-1 opacity-20"><User size={18}/><span className="text-[8px] font-black uppercase">You</span></div>
+            </div>
+          </div>
+        </div>
 
-         {/* הודעה צפה - Status מה-AI */}
-         <motion.div 
-           initial={{ y: 50, opacity: 0 }}
-           animate={{ y: 0, opacity: 1 }}
-           className="mt-12 bg-white/5 border border-white/10 px-8 py-4 rounded-full flex items-center gap-4 shadow-2xl backdrop-blur-xl"
-         >
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
-            <span className="text-xs font-black uppercase tracking-widest opacity-70">
-              ה-AI מסנכרן שינויים בזמן אמת...
-            </span>
-         </motion.div>
-      </section>
+        {/* --- Right: AI Designer Engine --- */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <div className="bg-white dark:bg-[#0b141a] border border-slate-200 dark:border-white/10 rounded-[4rem] p-10 flex-1 flex flex-col shadow-2xl relative overflow-hidden">
+            <div className="flex items-center gap-4 mb-10">
+              <div className="w-14 h-14 bg-green-500 rounded-[1.5rem] flex items-center justify-center text-white shadow-lg"><Sparkles size={24} /></div>
+              <div>
+                <h2 className="text-2xl font-black italic uppercase leading-none">AI Designer</h2>
+                <motion.div animate={badgeControls} className="text-[10px] text-green-600 font-black uppercase mt-1">Live Sync Active</motion.div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto mb-8 min-h-[300px]">
+              <AnimatePresence>
+                {aiCanvasText && (
+                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="p-8 bg-green-500/5 border-r-4 border-green-600 rounded-l-[3rem]">
+                    <p className="text-lg font-bold leading-relaxed text-green-700 dark:text-green-400 font-mono italic">{aiCanvasText}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+            <div className="relative">
+              <textarea placeholder="תגידי ל-AI: 'תוסיפי מבצע 20% על מניקור'..." className="w-full h-32 bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-6 text-sm outline-none focus:ring-2 ring-green-500 transition-all resize-none shadow-inner" />
+              <button className="absolute bottom-4 left-4 p-4 bg-green-600 text-white rounded-2xl shadow-xl hover:scale-105 transition-all"><Rocket size={20}/></button>
+            </div>
+          </div>
+        </div>
 
+      </div>
     </main>
   );
 }
