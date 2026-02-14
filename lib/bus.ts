@@ -1,27 +1,25 @@
 // lib/bus.ts
-
-export type BusEvent =
-  | { type: "STAGED_PATCH_SET"; patch: any[] }
-  | { type: "STAGED_PATCH_CLEAR" }
-  | { type: "MANIFEST_APPLIED"; manifest: any }
-  | { type: "LOCALE_CHANGED"; locale: "en" | "he" | "ar" };
-
 export class NileBus {
-  private ch: BroadcastChannel;
+  private ch: BroadcastChannel | null = null;
 
   constructor(name = "nile-bus") {
-    this.ch = new BroadcastChannel(name);
+    // בדיקה אם אנחנו בדפדפן
+    if (typeof window !== "undefined") {
+      this.ch = new BroadcastChannel(name);
+    }
   }
 
-  post(e: BusEvent) {
-    this.ch.postMessage(e);
+  post(e: any) {
+    this.ch?.postMessage(e);
   }
 
-  on(cb: (e: BusEvent) => void) {
-    this.ch.onmessage = (ev) => cb(ev.data);
+  on(cb: (e: any) => void) {
+    if (this.ch) {
+      this.ch.onmessage = (ev) => cb(ev.data);
+    }
   }
 
   close() {
-    this.ch.close();
+    this.ch?.close();
   }
 }
