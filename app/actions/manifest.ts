@@ -8,7 +8,7 @@ export async function getManifestAction(trialId?: string) {
   try {
     // אם אין trialId, נשתמש בברירת מחדל או נחזיר ריק
     const id = trialId || "default_manifest";
-    const docRef = doc(db, "chatManifests", id);
+    const docRef = doc(db, "trials", id);
     const snap = await getDoc(docRef);
 
     if (snap.exists()) {
