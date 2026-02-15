@@ -1,10 +1,10 @@
 /* lib/chat-logic.ts */
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { db } from "./firebase";
-import { doc, getDoc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
+import { db } from "./firebase"; // וודא שהנתיב תואם למיקום הקובץ
+import { doc, setDoc, updateDoc, onSnapshot } from "firebase/firestore";
 
 /** --- Types --- **/
 export type QuestionType = "text" | "choice" | "number" | "email" | "phone" | "boolean";
@@ -29,7 +29,7 @@ export interface Proposal {
   question?: Question;
   patch?: LogicPatch;
   rationale: string;
-  source: "local" | "rules" | "gemini" | "cache";
+  source: "local" | "rules" | "gemini";
 }
 
 export interface ChatManifest {
@@ -44,20 +44,18 @@ export interface ChatManifest {
 
 /** --- Smart AI Router: Local Rules Engine --- **/
 const KEYWORDS = [
-  { pkg: "beauty", words: ["מספרה", "ספר", "hair", "beauty", "קוסמטיקה"] },
-  { pkg: "auto", words: ["מוסך", "רכב", "garage", "תיקון", "car"] },
-  { pkg: "medical", words: ["מרפאה", "רופא", "clinic", "doctor", "שיניים"] }
+  { pkg: "beauty", words: ["מספרה", "ספר", "hair", "beauty", "קוסמטיקה", "יופי"] },
+  { pkg: "auto", words: ["מוסך", "רכב", "garage", "תיקון", "car", "צמיגים"] },
+  { pkg: "medical", words: ["מרפאה", "רופא", "clinic", "doctor", "שיניים", "טיפול"] }
 ];
 
-function runLocalRules(answer: string, manifest: ChatManifest): Proposal | null {
+function runLocalRules(answer: string): Proposal | null {
   const lower = answer.toLowerCase();
-  
-  // בדיקה אם המילה קיימת במאגר המקומי
   for (const entry of KEYWORDS) {
     if (entry.words.some(w => lower.includes(w))) {
       return {
         type: "patch",
-        rationale: `זוהה ענף ${entry.pkg} דרך מנוע מקומי (0 עלות API)`,
+        rationale: `זוהה ענף ${entry.pkg} דרך מנוע מקומי (חסכון ב-Gemini)`,
         source: "rules",
         patch: { setIndustry: entry.pkg }
       };
@@ -66,83 +64,56 @@ function runLocalRules(answer: string, manifest: ChatManifest): Proposal | null 
   return null;
 }
 
-/** --- Initial State --- **/
-export function createEmptyManifest(trialId: string): ChatManifest {
-  return {
-    trialId,
-    brand: { tone: "Luxury", language: "he" },
-    questions: [
-      { id: uuidv4(), text: "מה שם העסק שלך?", field: "businessName", type: "text", required: true }
-    ],
-    data: {},
-    aiConfidence: 0.5,
-    updatedAt: Date.now()
-  };
-}
-
-/** --- Hook: useChatLogic with Firestore Sync --- **/
+/** --- Hook: useChatLogic --- **/
 export function useChatLogic(trialId: string) {
   const [manifest, setManifest] = useState<ChatManifest | null>(null);
   const [proposal, setProposal] = useState<Proposal | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // סינכרון Firestore בזמן אמת
   useEffect(() => {
     if (!trialId) return;
     const docRef = doc(db, "chatManifests", trialId);
-    const unsub = onSnapshot(docRef, (snap) => {
+    return onSnapshot(docRef, (snap) => {
       if (snap.exists()) {
         setManifest(snap.data() as ChatManifest);
       } else {
-        const init = createEmptyManifest(trialId);
+        const init: ChatManifest = {
+          trialId,
+          brand: { tone: "Luxury", language: "he" },
+          questions: [{ id: uuidv4(), text: "מה שם העסק שלך?", field: "businessName", type: "text", required: true }],
+          data: {},
+          aiConfidence: 0.5,
+          updatedAt: Date.now()
+        };
         setDoc(docRef, init);
       }
     });
-    return unsub;
   }, [trialId]);
 
   const sendAnswer = async (text: string) => {
     if (!manifest) return;
     setIsProcessing(true);
 
-    // 1. עדכון הנתונים המקומיים (Data Extraction)
     const currentQ = manifest.questions.find(q => !(q.field in manifest.data));
     const updatedData = { ...manifest.data };
     if (currentQ) updatedData[currentQ.field] = text;
 
-    // 2. הפעלת ה-Smart Router
-    const localProp = runLocalRules(text, manifest);
-    
-    if (localProp) {
-      setProposal(localProp);
-    } else {
-      // כאן תבוא הקריאה ל-Gemini אם ה-Confidence נמוך
-      console.log("Calling Gemini Brain...");
-    }
+    const localProp = runLocalRules(text);
+    if (localProp) setProposal(localProp);
 
-    // עדכון מקומי זמני של הנתונים
-    await updateDoc(doc(db, "chatManifests", trialId), { 
-      data: updatedData,
-      updatedAt: Date.now()
-    });
-    
+    await updateDoc(doc(db, "chatManifests", trialId), { data: updatedData, updatedAt: Date.now() });
     setIsProcessing(false);
   };
 
   const approveProposal = async () => {
     if (!proposal || !manifest) return;
-    const docRef = doc(db, "chatManifests", trialId);
-    
-    let updatedManifest = { ...manifest };
-    
-    if (proposal.type === "question" && proposal.question) {
-      updatedManifest.questions.push(proposal.question);
-    } else if (proposal.type === "patch" && proposal.patch) {
-      if (proposal.patch.setIndustry) updatedManifest.industry = proposal.patch.setIndustry;
-      if (proposal.patch.addQuestions) updatedManifest.questions.push(...proposal.patch.addQuestions);
+    let next = { ...manifest };
+    if (proposal.type === "question" && proposal.question) next.questions.push(proposal.question);
+    if (proposal.type === "patch" && proposal.patch) {
+      if (proposal.patch.setIndustry) next.industry = proposal.patch.setIndustry;
+      if (proposal.patch.addQuestions) next.questions.push(...proposal.patch.addQuestions);
     }
-
-    await updateDoc(docRef, { ...updatedManifest, updatedAt: Date.now() });
+    await updateDoc(doc(db, "chatManifests", trialId), { ...next, updatedAt: Date.now() });
     setProposal(null);
   };
 
