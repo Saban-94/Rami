@@ -1,7 +1,7 @@
 /* lib/chat-logic.ts */
 import { useState, useEffect } from 'react';
 import { db } from './firebase';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, updateDoc } from 'firebase/firestore';
 import { detectIndustry } from './logic/industry-detection';
 
 export function useChatLogic(trialId: string) {
@@ -12,30 +12,30 @@ export function useChatLogic(trialId: string) {
   useEffect(() => {
     if (!trialId) return;
 
-    console.log("📡 Connecting to Firestore for ID:", trialId);
+    // שינוי קריטי: אנחנו מושכים מהקולקציה 'trials' כפי שמופיע ב-DB שלך
+    const docRef = doc(db, "trials", trialId);
 
-    const docRef = doc(db, "chatManifests", trialId);
+    console.log("📡 Listening to Trial ID:", trialId);
 
-    // האזנה בזמן אמת
-    const unsubscribe = onSnapshot(docRef, async (snap) => {
+    const unsubscribe = onSnapshot(docRef, (snap) => {
       if (snap.exists()) {
-        console.log("✅ Manifest found:", snap.data());
-        setManifest(snap.data());
+        const data = snap.data();
+        console.log("✅ Trial Data loaded:", data);
+        
+        // כאן אנחנו עושים נורמליזציה: אם המסמך בפורמט 'trial', נהפוך אותו למבנה שנוח לסטודיו
+        setManifest({
+          ...data,
+          // חילוץ לקוח ראשון מהמערך אם קיים (לזיהוי לקוח)
+          activeCustomer: data.customers?.[0] || null,
+          // הבטחת קיום שדות בסיסיים למניעת קריסות UI
+          questions: data.questions || [{ field: "name", text: "מה שם העסק שלך?" }],
+          aiConfidence: data.aiConfidence || 0.1
+        });
       } else {
-        console.log("⚠️ Document missing. Creating initial manifest...");
-        // יצירת מניפסט ראשוני אם הוא לא קיים כדי למנוע Spinner אינסופי
-        const initialData = {
-          aiConfidence: 0.1,
-          industry: "Learning...",
-          questions: [{ field: "business_name", text: "מה שם העסק שלך?" }],
-          data: {},
-          assets: {},
-          createdAt: new Date().toISOString()
-        };
-        await setDoc(docRef, initialData);
+        console.error("❌ Document not found in 'trials' collection");
       }
     }, (error) => {
-      console.error("🔥 Firestore Subscription Error:", error);
+      console.error("🔥 Firestore Error:", error);
     });
 
     return () => unsubscribe();
@@ -46,16 +46,18 @@ export function useChatLogic(trialId: string) {
     setIsProcessing(true);
 
     try {
+      // הרצת מנוע ה-NER והזיהוי שבנינו
       const result = detectIndustry(text);
+      
       if (result.primary) {
         setProposal({
-          type: 'update',
-          rationale: `זיהיתי שהעסק שלך שייך לתחום: ${result.primary.subIndustryId}`,
+          type: 'industry_update',
+          rationale: `זיהיתי שהלקוח מתעניין בתחום: ${result.primary.subIndustryName}`,
           data: result.primary
         });
       }
     } catch (err) {
-      console.error("Detection error:", err);
+      console.error("Detection analysis failed:", err);
     } finally {
       setIsProcessing(false);
     }
@@ -63,12 +65,18 @@ export function useChatLogic(trialId: string) {
 
   const approveProposal = async () => {
     if (!proposal || !trialId) return;
-    const docRef = doc(db, "chatManifests", trialId);
-    await setDoc(docRef, { 
-      industry: proposal.data.subIndustryId,
-      aiConfidence: 0.8 
-    }, { merge: true });
-    setProposal(null);
+    const docRef = doc(db, "trials", trialId);
+    
+    try {
+      await updateDoc(docRef, {
+        industry: proposal.data.subIndustryId,
+        aiConfidence: 0.9,
+        lastUpdate: new Date().toISOString()
+      });
+      setProposal(null);
+    } catch (err) {
+      console.error("Failed to update trial:", err);
+    }
   };
 
   return { 
