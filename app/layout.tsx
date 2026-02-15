@@ -51,9 +51,16 @@ export default function RootLayout({
               OneSignal.init({
                 appId: "be79010a-3a55-4672-9701-f2f9f1295240",
                 safari_web_id: "web.onesignal.auto.1046894c-83b6-45a4-984f-c4e1376f932f",
-                notifyButton: { enable: true },
+                notifyButton: { enable: false }, // מומלץ לכבות בבדיקות אם יש שגיאות
                 allowLocalhostAsSecureOrigin: true,
               });
+
+              // תיקון השגיאה: בדיקה שהאובייקט קיים לפני הגישה ל-on
+              if (OneSignal.Notifications) {
+                OneSignal.Notifications.on('permissionChange', function(permission) {
+                  console.log("OneSignal Permission:", permission);
+                });
+              }
             });
           `}
         </Script>
