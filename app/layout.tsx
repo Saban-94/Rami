@@ -39,31 +39,28 @@ export default function RootLayout({
 }) {
   return (
     <html lang="he" dir="rtl" className={`${assistant.variable} ${inter.variable}`} suppressHydrationWarning>
-      <head>
-        <Script 
-          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" 
-          strategy="afterInteractive" 
-        />
-        <Script id="onesignal-init" strategy="afterInteractive">
-          {`
-            window.OneSignal = window.OneSignal || [];
-            OneSignal.push(function() {
-              OneSignal.init({
-                appId: "be79010a-3a55-4672-9701-f2f9f1295240",
-                safari_web_id: "web.onesignal.auto.1046894c-83b6-45a4-984f-c4e1376f932f",
-                notifyButton: { enable: false }, // מומלץ לכבות בבדיקות אם יש שגיאות
-                allowLocalhostAsSecureOrigin: true,
-              });
+      <head><Script id="onesignal-init" strategy="afterInteractive">
+  {`
+    window.OneSignal = window.OneSignal || [];
+    OneSignal.push(function() {
+      OneSignal.init({
+        appId: "be79010a-3a55-4672-9701-f2f9f1295240",
+        safari_web_id: "web.onesignal.auto.1046894c-83b6-45a4-984f-c4e1376f932f",
+        notifyButton: { enable: false }, // כיבוי הכפתור המובנה למניעת שגיאות UI
+        allowLocalhostAsSecureOrigin: true,
+      });
 
-              // תיקון השגיאה: בדיקה שהאובייקט קיים לפני הגישה ל-on
-              if (OneSignal.Notifications) {
-                OneSignal.Notifications.on('permissionChange', function(permission) {
-                  console.log("OneSignal Permission:", permission);
-                });
-              }
-            });
-          `}
-        </Script>
+      // בדיקת בטיחות כפולה למניעת שגיאת ה-undefined
+      if (OneSignal.Notifications && typeof OneSignal.Notifications.on === 'function') {
+        OneSignal.Notifications.on('permissionChange', function(permission) {
+          console.log("OneSignal Permission Changed:", permission);
+        });
+      } else {
+        console.log("OneSignal Notifications not ready yet - skipping listener");
+      }
+    });
+  `}
+</Script> 
       </head>
       <body className="font-sans antialiased selection:bg-green-500/30 overflow-x-hidden bg-[#020617] text-white">
         {/* ה-Provider עטוף בבדיקה פשוטה ליתר ביטחון */}
