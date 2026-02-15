@@ -1,80 +1,106 @@
 "use client";
 
 import React from 'react';
-import { Sparkles, Phone, MapPin, Calendar, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Sparkles, Phone, MapPin, Calendar, CheckCircle2, MessageSquare, Star } from 'lucide-react';
 
 export default function TemplateEngine({ manifest }: { manifest: any }) {
   if (!manifest) return null;
 
   const theme = manifest.appConfig?.theme || {};
-  const primaryColor = theme.primaryColor || "#3b82f6";
-  const borderRadius = theme.borderRadius || "12px";
-  const blocks = manifest.appConfig?.blocks || [];
-
-  const hero = blocks.find((b: any) => b.id === 'hero') || blocks[0];
-  const cta = blocks.find((b: any) => b.type === 'button') || { label: "קבע תור" };
+  const isPro = manifest.activeTemplate === "luxury" || manifest.activeTemplate === "pro";
+  
+  // הגדרות צבעים דינמיות לתבנית ה-Pro
+  const primaryColor = isPro ? "#D4AF37" : (theme.primaryColor || "#3b82f6"); // זהב ל-Pro, כחול ל-Free
+  const bgColor = isPro ? "#020617" : "#ffffff";
+  const textColor = isPro ? "#ffffff" : "#0f172a";
+  const cardBg = isPro ? "rgba(255,255,255,0.05)" : "#f8fafc";
+  const borderRadius = theme.borderRadius || (isPro ? "40px" : "12px");
 
   return (
-    <div className="flex-1 bg-white overflow-y-auto flex flex-col h-full" style={{ fontFamily: theme.fontFamily || 'Inter, sans-serif' }}>
+    <div 
+      className="flex-1 overflow-y-auto flex flex-col h-full transition-colors duration-700" 
+      style={{ 
+        backgroundColor: bgColor, 
+        color: textColor,
+        fontFamily: theme.fontFamily || 'Inter, sans-serif' 
+      }}
+    >
       
-      {/* Hero Section */}
-      <section className="p-8 pt-12 text-center relative overflow-hidden">
-        <div 
-          style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }}
-          className="w-20 h-20 rounded-[2.5rem] mx-auto mb-8 flex items-center justify-center shadow-sm"
-        >
-          <Sparkles size={40} />
+      {/* Badge Pro - מוצג רק בתבנית היוקרה */}
+      {isPro && (
+        <div className="pt-12 px-8">
+           <div className="bg-gradient-to-r from-amber-500 to-yellow-600 text-[8px] font-black text-black px-3 py-1 rounded-full w-fit uppercase tracking-widest flex items-center gap-1 mx-auto">
+             <Star size={8} fill="currentColor"/> Premium Member
+           </div>
         </div>
-        <h1 className="text-3xl font-black text-slate-900 mb-4 tracking-tight leading-tight">
+      )}
+
+      {/* Hero Section */}
+      <section className={`p-8 ${isPro ? 'pt-6' : 'pt-12'} text-center relative`}>
+        <div 
+          style={{ 
+            backgroundColor: isPro ? `${primaryColor}20` : `${primaryColor}15`, 
+            color: primaryColor,
+            border: isPro ? `1px solid ${primaryColor}40` : 'none'
+          }}
+          className="w-20 h-20 rounded-[2.5rem] mx-auto mb-8 flex items-center justify-center shadow-2xl"
+        >
+          <Sparkles size={40} className={isPro ? "animate-pulse" : ""} />
+        </div>
+        
+        <h1 className={`text-3xl font-black mb-4 tracking-tight leading-tight ${isPro ? 'bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent' : 'text-slate-900'}`}>
           {manifest.businessName || "העסק שלך"}
         </h1>
-        <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8 max-w-[240px] mx-auto">
-          {hero?.subtitle || hero?.title || "פתרונות מתקדמים בהתאמה אישית"}
+        
+        <p className={`${isPro ? 'text-slate-400' : 'text-slate-500'} text-sm font-medium leading-relaxed mb-8 max-w-[240px] mx-auto`}>
+          {manifest.appConfig?.blocks?.[0]?.subtitle || "חווית שירות בסטנדרט אחר"}
         </p>
+
         <button 
-          style={{ backgroundColor: primaryColor, borderRadius: borderRadius }}
-          className="w-full py-5 text-white font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+          style={{ 
+            backgroundColor: primaryColor, 
+            borderRadius: borderRadius,
+            boxShadow: isPro ? `0 10px 30px -10px ${primaryColor}80` : 'none'
+          }}
+          className={`w-full py-5 ${isPro ? 'text-black font-black' : 'text-white font-bold'} text-xs uppercase tracking-[0.2em] active:scale-95 transition-all`}
         >
-          {cta?.label}
+          {isPro ? "Book Private Session" : "קבע תור עכשיו"}
         </button>
       </section>
 
-      {/* Services Grid (Dynamic from Training) */}
-      <section className="p-8 bg-slate-50/50 flex-1">
-        <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-          <CheckCircle2 size={12} style={{ color: primaryColor }} /> שירותים פופולריים
+      {/* Services Section */}
+      <section className={`p-8 ${isPro ? 'bg-white/5' : 'bg-slate-50/50'} flex-1 rounded-t-[3rem]`}>
+        <h2 className={`text-[10px] font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2 ${isPro ? 'text-amber-500/60' : 'text-slate-400'}`}>
+          <CheckCircle2 size={12} /> {isPro ? "Premium Services" : "השירותים שלנו"}
         </h2>
+        
         <div className="grid grid-cols-1 gap-3">
-          {manifest.trainingHistory?.length > 0 ? (
-            manifest.trainingHistory.slice(0, 4).map((item: any, i: number) => (
-              <div key={i} className="p-4 bg-white rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
-                 <span className="text-xs font-bold text-slate-700">{item.text.length > 30 ? item.text.substring(0,30) + '...' : item.text}</span>
-                 <div style={{ color: primaryColor }}><Calendar size={14}/></div>
-              </div>
-            ))
-          ) : (
-            <div className="p-8 border-2 border-dashed border-slate-200 rounded-3xl text-center text-slate-400 text-[10px] font-bold uppercase">
-              המערכת לומדת את השירותים שלך...
+          {manifest.trainingHistory?.slice(0, 3).map((item: any, i: number) => (
+            <div 
+              key={i} 
+              style={{ backgroundColor: cardBg, borderColor: isPro ? 'rgba(255,255,255,0.1)' : '#f1f5f9' }}
+              className="p-5 rounded-3xl border flex items-center justify-between group transition-all"
+            >
+               <span className="text-xs font-bold">{item.text.split(' ')[0]} ...</span>
+               <div style={{ color: primaryColor }} className="opacity-50 group-hover:opacity-100 transition-opacity">
+                 <Calendar size={14}/>
+               </div>
             </div>
-          )}
+          ))}
         </div>
       </section>
 
-      {/* Modern Footer Contact */}
-      <section className="p-6 bg-white">
-        <div className="flex gap-2">
-          <a 
-            href={`tel:${manifest.customers?.[0]?.phone}`}
-            className="flex-1 bg-slate-900 text-white p-4 rounded-2xl flex items-center justify-center gap-2 transition-transform active:scale-95"
-          >
-            <Phone size={16} />
-            <span className="text-[10px] font-black uppercase">התקשר</span>
-          </a>
+      {/* Footer Contact */}
+      <section className={`p-6 ${isPro ? 'bg-black' : 'bg-white'} border-t ${isPro ? 'border-white/5' : 'border-slate-100'}`}>
+        <div className="flex gap-3">
+          <div className={`flex-1 ${isPro ? 'bg-white text-black' : 'bg-slate-900 text-white'} p-5 rounded-[1.5rem] flex items-center justify-center gap-2 font-black text-[10px] uppercase`}>
+            <Phone size={14} /> WhatsApp
+          </div>
           <div 
-            style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}
-            className="p-4 rounded-2xl transition-transform active:scale-95"
+            style={{ border: `1px solid ${isPro ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}` }}
+            className="p-5 rounded-[1.5rem] flex items-center justify-center"
           >
-            <MessageSquare size={18} />
+            <MapPin size={16} style={{ color: primaryColor }} />
           </div>
         </div>
       </section>
