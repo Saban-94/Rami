@@ -5,8 +5,21 @@ import { useParams } from "next/navigation";
 import { useChatLogic } from "@/lib/chat-logic";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  BrainCircuit, LayoutDashboard, Moon, Sun, ChevronDown, 
-  ChevronUp, Clock, User, Palette, Eye, Send, Sparkles, X, Activity 
+  BrainCircuit, 
+  LayoutDashboard, 
+  Moon, 
+  Sun, 
+  ChevronDown, 
+  ChevronUp, 
+  Clock, 
+  User, 
+  Palette, 
+  Eye, 
+  Send, 
+  Sparkles, 
+  X, 
+  Activity,
+  Database // הוספנו את הייבוא החסר שגרם לשגיאה
 } from "lucide-react";
 
 export default function NielappStudioPage() {
@@ -16,7 +29,7 @@ export default function NielappStudioPage() {
   const [isClient, setIsClient] = useState(false);
   const [input, setInput] = useState("");
 
-  // מבטיח שהקומפוננטה תתרנדר רק בצד הלקוח
+  // מבטיח שהקומפוננטה תתרנדר רק בצד הלקוח למניעת שגיאות SSR
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -58,6 +71,7 @@ export default function NielappStudioPage() {
               <input 
                 value={input} 
                 onChange={e => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && !isProcessing && input && (sendAnswer(input), setInput(""))}
                 className="w-full bg-slate-100 rounded-2xl p-4 text-sm text-slate-900 outline-none focus:ring-2 ring-blue-500 transition-all"
                 placeholder="הקלד/י כאן..."
               />
@@ -82,51 +96,77 @@ export default function NielappStudioPage() {
 
 function BrainConsole({ manifest, proposal, approve, reject }: any) {
   const [viewMode, setViewMode] = useState<'visual' | 'raw'>('visual');
-  const [expandedSection, setExpandedSection] = useState<string | null>('context');
 
   return (
     <div className="h-full flex flex-col bg-[#020617]">
       <div className="p-6 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-600 rounded-lg"><LayoutDashboard size={18} /></div>
-          <h2 className="font-black text-xs uppercase tracking-widest">Intelligence</h2>
+          <h2 className="font-black text-xs uppercase tracking-widest text-white">Intelligence</h2>
         </div>
-        <div className="flex bg-white/5 p-1 rounded-lg">
-          <button onClick={() => setViewMode('visual')} className={`p-2 rounded-md ${viewMode === 'visual' ? 'bg-blue-600' : ''}`}><Database size={14}/></button>
-          <button onClick={() => setViewMode('raw')} className={`p-2 rounded-md ${viewMode === 'raw' ? 'bg-blue-600' : ''}`}><Eye size={14}/></button>
+        <div className="flex bg-white/5 p-1 rounded-lg border border-white/10">
+          <button 
+            onClick={() => setViewMode('visual')} 
+            className={`p-2 rounded-md transition-all ${viewMode === 'visual' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Database size={14}/>
+          </button>
+          <button 
+            onClick={() => setViewMode('raw')} 
+            className={`p-2 rounded-md transition-all ${viewMode === 'raw' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Eye size={14}/>
+          </button>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {viewMode === 'raw' ? (
-          <pre className="p-4 bg-black/40 rounded-2xl text-[10px] text-blue-300 font-mono overflow-auto h-full">
-            {JSON.stringify(manifest, null, 2)}
-          </pre>
+          <div className="p-4 bg-black/40 rounded-2xl border border-white/5 font-mono text-[10px] text-blue-300 overflow-auto h-full">
+            <pre>{JSON.stringify(manifest, null, 2)}</pre>
+          </div>
         ) : (
           <div className="space-y-3">
              {/* AI PROPOSAL */}
-             <AnimatePresence>
+             <AnimatePresence mode="wait">
                {proposal && (
-                 <motion.div initial={{scale:0.9, opacity:0}} animate={{scale:1, opacity:1}} className="p-5 bg-blue-600 rounded-[2rem] border border-white/20 shadow-xl">
-                   <p className="text-xs font-bold mb-4 leading-relaxed">{proposal.rationale}</p>
+                 <motion.div 
+                   initial={{ scale: 0.9, opacity: 0, y: 10 }} 
+                   animate={{ scale: 1, opacity: 1, y: 0 }} 
+                   exit={{ scale: 0.9, opacity: 0 }}
+                   className="p-5 bg-blue-600 rounded-[2rem] border border-white/20 shadow-xl"
+                 >
+                   <div className="flex items-center gap-2 mb-3 text-white/70 text-[10px] font-bold uppercase tracking-widest">
+                     <Sparkles size={12} /> AI Insight
+                   </div>
+                   <p className="text-xs font-bold text-white mb-4 leading-relaxed">{proposal.rationale}</p>
                    <div className="flex gap-2">
-                     <button onClick={approve} className="flex-1 bg-white text-blue-600 py-3 rounded-xl font-black text-[10px] uppercase">Approve</button>
-                     <button onClick={reject} className="p-3 bg-black/20 rounded-xl"><X size={14}/></button>
+                     <button onClick={approve} className="flex-1 bg-white text-blue-600 py-3 rounded-xl font-black text-[10px] uppercase hover:bg-blue-50 transition-colors">Approve</button>
+                     <button onClick={reject} className="p-3 bg-black/20 text-white rounded-xl hover:bg-black/30 transition-colors"><X size={14}/></button>
                    </div>
                  </motion.div>
                )}
              </AnimatePresence>
 
              {/* Customers Table */}
-             <div className="p-4 bg-white/5 rounded-[2rem] border border-white/5">
-                <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-3 flex items-center gap-2"><User size={12}/> Active Customers</h4>
+             <div className="p-5 bg-white/5 rounded-[2rem] border border-white/5">
+                <h4 className="text-[10px] font-bold text-slate-500 uppercase mb-4 flex items-center gap-2 tracking-widest">
+                  <User size={12}/> Active Customers
+                </h4>
                 <div className="space-y-2">
-                  {manifest.customers?.map((c: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-white/5 rounded-xl text-xs">
-                      <span className="font-bold">{c.name}</span>
-                      <span className="text-slate-400">{c.service}</span>
-                    </div>
-                  ))}
+                  {manifest.customers?.length > 0 ? (
+                    manifest.customers.map((c: any, i: number) => (
+                      <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm text-white">{c.name}</span>
+                          <span className="text-[10px] text-slate-500">{c.phone}</span>
+                        </div>
+                        <span className="px-2 py-1 bg-blue-500/10 text-blue-400 rounded-lg text-[10px] font-bold uppercase">{c.service}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-slate-600 text-[10px] italic">No active customers found</div>
+                  )}
                 </div>
              </div>
           </div>
@@ -139,8 +179,11 @@ function BrainConsole({ manifest, proposal, approve, reject }: any) {
 function LoadingScreen() {
   return (
     <div className="h-screen bg-[#020617] flex flex-col items-center justify-center gap-6">
-      <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-      <p className="text-blue-500 font-black text-[10px] tracking-[0.3em] uppercase">Initializing Nielapp Brain...</p>
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-blue-500/20 rounded-full" />
+        <div className="absolute top-0 left-0 w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+      <p className="text-blue-500 font-black text-[10px] tracking-[0.4em] uppercase animate-pulse">Initializing Nielapp Brain...</p>
     </div>
   );
 }
