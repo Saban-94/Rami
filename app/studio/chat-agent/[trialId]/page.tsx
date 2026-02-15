@@ -1,131 +1,173 @@
-/* app/studio/chat-agent/[trialId]/page.tsx */
 "use client";
 
 import React, { useState } from "react";
-import { useParams } from "next/navigation";
-import { useChatLogic } from "@/lib/chat-logic";
 import { motion, AnimatePresence } from "framer-motion";
-import { BrainCircuit, Sparkles, Send, Check, X, Activity } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Database, 
+  Moon, 
+  Sun, 
+  ChevronDown, 
+  ChevronUp, 
+  Clock, 
+  User, 
+  Palette,
+  Eye,
+  EyeOff
+} from "lucide-react";
 
-export default function NielappStudio() {
-  const { trialId } = useParams();
-  const { manifest, proposal, isProcessing, sendAnswer, approveProposal, rejectProposal } = useChatLogic(trialId as string);
-  const [input, setInput] = useState("");
+export default function BrainConsole({ manifest }: { manifest: any }) {
+  const [viewMode, setViewMode] = useState<'visual' | 'raw'>('visual');
+  const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark');
+  const [expandedSection, setExpandedSection] = useState<string | null>('context');
 
-  if (!manifest) return <LoadingScreen />;
+  // פונקציית עזר לניקוי והצגת תאריכים מ-Firebase
+  const formatDate = (ts: any) => {
+    if (!ts) return "--";
+    const date = ts.seconds ? new Date(ts.seconds * 1000) : new Date(ts);
+    return date.toLocaleDateString('he-IL') + " " + date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  };
 
-  const primaryColor = manifest.theme?.primaryColor || "#3b82f6";
+  const toggleSection = (id: string) => setExpandedSection(expandedSection === id ? null : id);
 
   return (
-    <div className="h-screen bg-[#020617] text-white flex overflow-hidden font-sans" dir="rtl">
+    <div className={`w-full h-full flex flex-col transition-colors duration-500 ${themeMode === 'dark' ? 'bg-[#020617] text-white' : 'bg-slate-50 text-slate-900'}`}>
       
-      {/* --- SIDEBAR: BRAIN CONSOLE --- */}
-      <div className="w-1/3 border-l border-white/10 bg-black/40 backdrop-blur-3xl p-8 flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-blue-600/20 rounded-2xl border border-blue-500/30">
-              <BrainCircuit className="text-blue-400" size={24}/>
-            </div>
-            <h2 className="text-xl font-black italic uppercase tracking-tighter">Brain Console</h2>
+      {/* Header - בקרת תצוגה */}
+      <div className="p-6 border-b border-white/10 flex items-center justify-between backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-blue-600 rounded-lg shadow-lg shadow-blue-500/20">
+            <LayoutDashboard size={20} className="text-white" />
           </div>
-          <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-            <span className="text-[10px] font-bold text-emerald-500 uppercase">Live Sync</span>
-          </div>
+          <h2 className="font-black text-sm uppercase tracking-widest">Nielapp Intelligence</h2>
         </div>
-
-        {/* JSON Viewer */}
-        <div className="flex-1 bg-black/60 rounded-[2.5rem] border border-white/5 p-6 font-mono text-[11px] text-blue-300/80 overflow-auto shadow-inner">
-          <div className="flex items-center gap-2 mb-4 text-white/40 border-b border-white/5 pb-2">
-            <Activity size={12} /> <span>CURRENT_MANIFEST_STATE</span>
-          </div>
-          <pre>{JSON.stringify(manifest, null, 2)}</pre>
+        
+        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+          <button onClick={() => setThemeMode('light')} className={`p-2 rounded-lg transition-all ${themeMode === 'light' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-400'}`}><Sun size={16}/></button>
+          <button onClick={() => setThemeMode('dark')} className={`p-2 rounded-lg transition-all ${themeMode === 'dark' ? 'bg-blue-600 text-white' : 'text-slate-400'}`}><Moon size={16}/></button>
         </div>
-
-        {/* AI PROPOSALS PANEL */}
-        <AnimatePresence>
-          {proposal && (
-            <motion.div 
-              initial={{ opacity: 0, y: 50, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="p-6 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] shadow-2xl shadow-blue-900/40 border border-white/20"
-            >
-              <div className="flex items-center gap-2 mb-3 text-white/80 font-bold text-[10px] uppercase tracking-widest">
-                <Sparkles size={14} className="animate-spin-slow" /> AI Insight Detected
-              </div>
-              <p className="text-sm font-bold text-white mb-6 leading-relaxed">{proposal.rationale}</p>
-              <div className="flex gap-2">
-                <button onClick={approveProposal} className="flex-1 bg-white text-blue-700 py-4 rounded-2xl font-black text-[10px] uppercase hover:bg-blue-50 transition-all shadow-lg">
-                  Approve Patch
-                </button>
-                <button onClick={rejectProposal} className="p-4 bg-black/20 text-white rounded-2xl hover:bg-black/30 transition-all">
-                  <X size={18} />
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
-      {/* --- MAIN: IPHONE SIMULATOR --- */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#0f172a] relative">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent opacity-50" />
-        
-        <div className="w-[340px] h-[680px] bg-white rounded-[3.5rem] border-[12px] border-slate-800 shadow-[0_0_100px_-20px_rgba(0,0,0,0.8)] relative overflow-hidden flex flex-col transition-all duration-500">
-          <div className="h-8 bg-white flex items-center justify-center pt-2">
-            <div className="w-16 h-5 bg-slate-800 rounded-b-2xl" />
-          </div>
+      {/* Tabs */}
+      <div className="flex p-4 gap-2">
+        <button 
+          onClick={() => setViewMode('visual')}
+          className={`flex-1 py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${viewMode === 'visual' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
+        >
+          <Database size={14}/> תובנות עסק
+        </button>
+        <button 
+          onClick={() => setViewMode('raw')}
+          className={`flex-1 py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${viewMode === 'raw' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-400'}`}
+        >
+          <Eye size={14}/> JSON גולמי
+        </button>
+      </div>
 
-          <div className="flex-1 flex flex-col bg-slate-50 relative">
-            <div className="flex-1 p-8 flex flex-col items-center justify-center text-center">
-              <motion.div 
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ repeat: Infinity, duration: 3 }}
-                style={{ backgroundColor: primaryColor }}
-                className="w-20 h-20 rounded-3xl mb-8 flex items-center justify-center text-white shadow-2xl"
-              >
-                <Sparkles size={40} />
-              </motion.div>
-              <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tight">
-                {manifest.questions?.[0]?.text || "איך אוכל לעזור לעסק שלך היום?"}
-              </h3>
-              <p className="text-[11px] text-slate-400 font-bold uppercase tracking-[0.2em]">Nielapp AI Agent</p>
-            </div>
-
-            <div className="p-8 bg-white border-t border-slate-100 shadow-[0_-20px_40px_-20px_rgba(0,0,0,0.05)]">
-              <input 
-                value={input} 
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && (sendAnswer(input), setInput(""))}
-                className="w-full bg-slate-100 border-2 border-transparent rounded-2xl p-5 text-sm text-slate-900 outline-none focus:border-blue-500 transition-all"
-                placeholder="הקלד/י תשובה..."
-              />
-              <button 
-                onClick={() => { sendAnswer(input); setInput(""); }}
-                disabled={isProcessing || !input}
-                style={{ backgroundColor: isProcessing ? '#94a3b8' : primaryColor }}
-                className="w-full mt-4 text-white p-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-blue-500/10"
-              >
-                {isProcessing ? "Analyzing..." : "Send Message"}
-                {!isProcessing && <Send size={16} />}
-              </button>
-            </div>
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+        {viewMode === 'raw' ? (
+          <div className="p-4 bg-black/40 rounded-3xl border border-white/5 font-mono text-[11px] text-blue-300 leading-relaxed overflow-x-auto">
+            <pre>{JSON.stringify(manifest, null, 2)}</pre>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-4">
+            
+            {/* כרטיסיית לקוחות - טבלה מודרנית */}
+            <Section title="לקוחות פעילים" id="customers" icon={<User size={16}/>} current={expandedSection} onToggle={toggleSection}>
+              <div className="overflow-hidden rounded-2xl border border-white/5 bg-white/5">
+                <table className="w-full text-right text-xs">
+                  <thead className="bg-white/5 text-slate-400 font-bold uppercase tracking-tighter">
+                    <tr>
+                      <th className="p-3">שם</th>
+                      <th className="p-3">טלפון</th>
+                      <th className="p-3">שירות</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {manifest.customers?.map((c: any) => (
+                      <tr key={c.id} className="hover:bg-white/5 transition-colors">
+                        <td className="p-3 font-bold">{c.name}</td>
+                        <td className="p-3 text-slate-400">{c.phone}</td>
+                        <td className="p-3"><span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-md">{c.service}</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+
+            {/* כרטיסיית ידע נלמד - שורות נקיות */}
+            <Section title="ידע שנלמד (Training)" id="context" icon={<Clock size={16}/>} current={expandedSection} onToggle={toggleSection}>
+              <div className="space-y-2">
+                {manifest.trainingHistory?.map((item: any, i: number) => (
+                  <div key={i} className="p-3 bg-white/5 rounded-2xl border border-white/5 flex flex-col gap-1">
+                    <span className="text-[10px] text-blue-400 font-bold tracking-widest">{item.date}</span>
+                    <p className="text-sm font-medium leading-relaxed">{item.text}</p>
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            {/* כרטיסיית עיצוב - תצוגה ויזואלית */}
+            <Section title="הגדרות עיצוב (AppConfig)" id="theme" icon={<Palette size={16}/>} current={expandedSection} onToggle={toggleSection}>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-white/5 rounded-2xl border border-white/5">
+                  <span className="text-[10px] text-slate-500 uppercase block mb-1">צבע ראשי</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full" style={{backgroundColor: manifest.appConfig?.theme?.primaryColor}} />
+                    <span className="text-xs font-mono uppercase">{manifest.appConfig?.theme?.primaryColor}</span>
+                  </div>
+                </div>
+                <div className="p-3 bg-white/5 rounded-2xl border border-white/5">
+                  <span className="text-[10px] text-slate-500 uppercase block mb-1">רדיוס פינה</span>
+                  <span className="text-xs font-bold">{manifest.appConfig?.theme?.borderRadius}</span>
+                </div>
+              </div>
+            </Section>
+
+          </div>
+        )}
+      </div>
+      
+      {/* Footer עם סטטוס סנכרון */}
+      <div className="p-4 border-t border-white/10 flex items-center justify-between text-[10px] font-bold text-slate-500">
+        <span>עודכן לאחרונה: {formatDate(manifest.lastUpdate)}</span>
+        <span className="text-emerald-500 uppercase">System Active</span>
       </div>
     </div>
   );
 }
 
-function LoadingScreen() {
+// קומפוננטת עזר לאקורדיון
+function Section({ title, id, icon, children, current, onToggle }: any) {
+  const isOpen = current === id;
   return (
-    <div className="h-screen bg-[#020617] flex flex-col items-center justify-center gap-6">
-      <div className="relative w-24 h-24">
-        <div className="absolute inset-0 border-4 border-blue-500/20 rounded-full" />
-        <div className="absolute inset-0 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-      <p className="text-blue-500 font-black text-xs uppercase tracking-[0.4em] animate-pulse">Initializing Nielapp Brain</p>
+    <div className="overflow-hidden">
+      <button 
+        onClick={() => onToggle(id)}
+        className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${isOpen ? 'bg-blue-600/10 border border-blue-500/20' : 'hover:bg-white/5 border border-transparent'}`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`${isOpen ? 'text-blue-500' : 'text-slate-400'}`}>{icon}</div>
+          <span className={`text-sm font-bold ${isOpen ? 'text-white' : 'text-slate-300'}`}>{title}</span>
+        </div>
+        {isOpen ? <ChevronUp size={16}/> : <ChevronDown size={16}/>}
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 pt-2">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
