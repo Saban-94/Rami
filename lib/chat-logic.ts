@@ -12,7 +12,27 @@ export interface ChatManifest {
     website?: AssetWebsite;
   };
 }
+/* lib/chat-logic.ts */
+// ... (הטייפים הקודמים נשארים)
 
+export async function publishManifestToProduction(trialId: string, manifest: ChatManifest) {
+  if (!manifest.assets?.website) throw new Error("No website asset found to publish");
+
+  // עדכון הדוקומנט הראשי של ה-Trial ב-Firestore
+  const trialRef = doc(db, "trials", trialId);
+  
+  await updateDoc(trialRef, {
+    manifest: {
+      app: {
+        nameHe: manifest.data.businessName || "עסק חדש",
+        brandTag: manifest.industry || "Nielapp Build"
+      },
+      blocks: manifest.assets.website.blocks,
+      publishedAt: Date.now(),
+      status: "live"
+    }
+  });
+}
 /** --- Asset Generator: יוצר אתר מהנתונים שנאספו --- **/
 export function generateWebsiteAsset(manifest: ChatManifest): AssetWebsite {
   const { data, industry, brand } = manifest;
