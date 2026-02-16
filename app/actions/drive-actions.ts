@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/firebase-admin";
 import { uploadLogoToFolder } from "@/lib/drive";
-
+export async function uploadToDriveAction(formData: FormData) {
 export async function uploadProfileImage(trialId: string, formData: FormData) {
   try {
     const file = formData.get('file') as File;
