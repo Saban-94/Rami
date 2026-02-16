@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // התעלמות משגיאות טיפוסים בזמן Build כדי לאפשר פריסה מהירה
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -9,14 +8,19 @@ const nextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // מונע מ-Webpack לנסות לפתור מודולים של Node.js בצד הלקוח
+      // חומת מגן מפני ספריות שרת שזולגות לקוד לקוח
       config.resolve.fallback = {
+        ...config.resolve.fallback,
         fs: false,
         net: false,
         tls: false,
         child_process: false,
-        path: false,
+        http2: false,
+        dns: false,
         os: false,
+        path: false,
+        stream: false,
+        crypto: false,
       };
     }
     return config;
