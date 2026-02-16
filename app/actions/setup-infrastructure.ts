@@ -2,8 +2,8 @@
 "use server";
 
 import { db } from "../../lib/firebaseAdmin";
-import { createBusinessStorage } from "@/lib/drive";
-import { createBusinessCalendar } from "@/lib/calendar";
+import { createBusinessStorage } from "../../lib/drive";
+import { createBusinessCalendar } from "../../lib/calendar";
 
 export async function setupBusinessInfrastructure(trialId: string, businessName: string) {
   try {
