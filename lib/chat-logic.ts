@@ -1,41 +1,47 @@
-'use client';
+import type { Metadata } from "next";
+import { Assistant } from "next/font/google";
+import "./globals.css";
+import { ToastProvider } from "@/components/ui/ToastProvider";
+import { I18nProvider } from "@/components/I18nProvider";
 
-import { useState, useEffect } from 'react';
-import { db } from './firebase';
-import { doc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
-// ייבוא רגיל - Next.js יטפל בזה כ-Server Action
-import { setupBusinessInfrastructure } from '@/app/actions/setup-infrastructure';
+/**
+ * הגדרת הפונט Assistant בצורה אופטימלית ל-Next.js.
+ * זה מונע את הצורך בקישור חיצוני ל-Google Fonts שגרם לנפילות ב-Build.
+ */
+const assistant = Assistant({
+  subsets: ["hebrew", "latin"],
+  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  display: "swap", // מבטיח שהטקסט יוצג מיד עם פונט מערכת עד שהפונט נטען
+});
 
-export function useChatLogic(trialId: string) {
-  const [manifest, setManifest] = useState<any>(null);
-  const [proposal, setProposal] = useState<any>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+export const metadata: Metadata = {
+  title: "SabanOS | Smart Business Infrastructure",
+  description: "מערכת ניהול חכמה לעסקים - יצירת אפליקציות וניהול תשתיות AI",
+  manifest: "/manifest.json",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+};
 
-  useEffect(() => {
-    if (!trialId) return;
-    const docRef = doc(db, "trials", trialId);
-    const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) setManifest(snap.data());
-    });
-    return () => unsubscribe();
-  }, [trialId]);
-
-  const approveProposal = async () => {
-    if (!proposal || !trialId) return;
-    try {
-      const docRef = doc(db, "trials", trialId);
-      await updateDoc(docRef, proposal.data);
-
-      if (proposal.data.needsInfrastructure) {
-        // קריאה ישירה ל-Action (מותר כי הוא 'use server')
-        const businessName = manifest?.businessName || proposal.data.businessName;
-        await setupBusinessInfrastructure(trialId, businessName);
-      }
-      setProposal(null);
-    } catch (err) {
-      console.error("Setup failed:", err);
-    }
-  };
-
-  return { manifest, proposal, isProcessing, approveProposal, rejectProposal: () => setProposal(null) };
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="he" dir="rtl">
+      <head>
+        {/* אין צורך בקישורי פונטים חיצוניים כאן - הכל מטופל ע"י ה-Assistant למעלה */}
+      </head>
+      <body className={assistant.className}>
+        {/* עטיפת האפליקציה ב-Providers:
+           1. I18nProvider - לניהול שפות.
+           2. ToastProvider - לניהול התראות (חייב להיות כאן כדי ש-useToast יעבוד בכל מקום).
+        */}
+        <I18nProvider lang="he">
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </I18nProvider>
+      </body>
+    </html>
+  );
 }
