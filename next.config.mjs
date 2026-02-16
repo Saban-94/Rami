@@ -4,7 +4,6 @@ const nextConfig = {
   eslint: { ignoreDuringBuilds: true },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // טיפול בשגיאת UnhandledSchemeError עבור node:
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
