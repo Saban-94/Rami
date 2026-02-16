@@ -21,22 +21,23 @@ export function useChatLogic(trialId: string) {
     setIsProcessing(true);
     try {
       const docRef = doc(db, "trials", trialId);
+      const lowerText = text.toLowerCase();
+      
       await updateDoc(docRef, {
         messages: arrayUnion({ role: 'user', text, timestamp: new Date().toISOString() })
       });
 
-      const lowerText = text.toLowerCase();
-      if (lowerText.includes('ספר') || lowerText.includes('מספרה')) {
+      if (lowerText.includes('ספר') || lowerText.includes('מספרה') || lowerText.includes('תספורת')) {
         setProposal({
           type: 'setup',
-          rationale: 'זיהיתי עסק יופי. האם להקים תשתית דיגיטלית?',
+          rationale: 'זיהיתי עסק יופי. האם להקים תשתית דיגיטלית בשרתי SabanOS?',
           data: { businessType: 'beauty', needsInfrastructure: true }
         });
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsProcessing(false);
+    } catch (err) { 
+      console.error("Chat Error:", err); 
+    } finally { 
+      setIsProcessing(false); 
     }
   };
 
@@ -47,15 +48,22 @@ export function useChatLogic(trialId: string) {
       await updateDoc(docRef, proposal.data);
 
       if (proposal.data.needsInfrastructure) {
-        // ייבוא דינמי מוחלט - מונע מ-Webpack לנתח את השרשרת בזמן הקימפול
-        const { setupBusinessInfrastructure } = await import("@/app/actions/setup-infrastructure");
-        await setupBusinessInfrastructure(trialId, manifest?.businessName || proposal.data.businessName);
+        // ייבוא דינמי בזמן ריצה בלבד - זה מנתק את שרשרת הייבוא בזמן ה-Build
+        const infrastructure = await import("@/app/actions/setup-infrastructure");
+        await infrastructure.setupBusinessInfrastructure(trialId, manifest?.businessName || "עסק חדש");
       }
       setProposal(null);
-    } catch (err) {
-      console.error("Critical Setup Error:", err);
+    } catch (err) { 
+      console.error("Setup failed:", err); 
     }
   };
 
-  return { manifest, proposal, isProcessing, sendAnswer, approveProposal, rejectProposal: () => setProposal(null) };
+  return { 
+    manifest, 
+    proposal, 
+    isProcessing, 
+    sendAnswer, 
+    approveProposal, 
+    rejectProposal: () => setProposal(null) 
+  };
 }
