@@ -2,47 +2,39 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// הגדרת המודל - וודא שהגדרת ב-Vercel משתנה סביבה בשם GEMINI_API_KEY
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
-export async function processBusinessRequest(prompt: string, history: any, businessContext: any) {
+export async function suggestDesignFromPrompt({ prompt }: { prompt: string }) {
   try {
-    // מעבר למודל פלאש - מהיר יותר ועם מכסה חינמית גדולה בהרבה
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-3-flash-preview", 
-    });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const bName = businessContext?.name || "SabanOS";
-    const bIndustry = businessContext?.industry || "Automation";
+    const systemPrompt = `
+      You are a luxury UI designer for SabanOS Studio. 
+      Your task is to return ONLY a JSON object that modifies the business application theme.
+      The JSON structure should be:
+      {
+        "appConfig.theme.primaryColor": "HEX_COLOR",
+        "appConfig.theme.darkMode": boolean
+      }
+      If the user asks for "luxury" or "gold", use #C8A55A.
+      If they ask for "dark", set darkMode to true.
+      Return ONLY the JSON, no markdown, no explanation.
+    `;
 
-    const systemInstruction = `אתה העוזר של ${bName}. התחום: ${bIndustry}. 
-    ענה בעברית טבעית וקצרה (סגנון וואטסאפ). אל תחזור על הצהרות שירות שכבר נאמרו.`;
-
-    let safeHistory = Array.isArray(history) ? history : [];
-
-    const formattedHistory = safeHistory
-      .filter((msg: any) => msg && msg.content)
-      .map((msg: any) => ({
-        role: msg.role === "user" ? "user" : "model",
-        parts: [{ text: String(msg.content) }],
-      }));
-
-    const chat = model.startChat({
-      history: formattedHistory,
-    });
-
-    const finalPrompt = `[הנחיית מערכת: ${systemInstruction}]\n\nמשתמש: ${prompt}`;
-
-    const result = await chat.sendMessage(finalPrompt);
+    const result = await model.generateContent(`${systemPrompt}\n\nUser request: ${prompt}`);
     const response = await result.response;
-    return response.text();
-
-  } catch (error: any) {
-    console.error("Gemini Quota/API Error:", error);
+    const text = response.text();
     
-    if (error.status === 429) {
-      return "אופס, אני קצת עמוס כרגע. נסה שוב בעוד כמה שניות.";
-    }
+    // ניקוי הטקסט למקרה שה-AI החזיר סימני Markdown
+    const cleanJson = text.replace(/```json|```/g, "").trim();
     
-    return "אופס, יש תקלה זמנית. נסה שוב בעוד דקה.";
+    return JSON.parse(cleanJson);
+  } catch (error) {
+    console.error("Gemini Error:", error);
+    // פולבק במקרה של שגיאה כדי שהמערכת לא תקרוס
+    return {
+      "appConfig.theme.primaryColor": "#10b981"
+    };
   }
 }
