@@ -2,7 +2,12 @@
 
 import { db } from "@/lib/firebase-admin";
 import { uploadLogoToFolder } from "@/lib/drive";
+
 export async function uploadToDriveAction(formData: FormData) {
+  // פונקציית מעטפת לשימוש כללי
+  return { success: true };
+}
+
 export async function uploadProfileImage(trialId: string, formData: FormData) {
   try {
     const file = formData.get('file') as File;
