@@ -11,74 +11,31 @@ export function useChatLogic(trialId: string) {
     if (!trialId) return;
     const docRef = doc(db, "trials", trialId);
     const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) {
-        setManifest(snap.data());
-      }
-    }, (err) => console.error("Firestore Sync Error:", err));
-
+      if (snap.exists()) setManifest(snap.data());
+    });
     return () => unsubscribe();
   }, [trialId]);
 
   const sendAnswer = async (text: string) => {
     if (!text || isProcessing || !trialId) return;
     setIsProcessing(true);
-
     try {
       const docRef = doc(db, "trials", trialId);
       const lowerText = text.toLowerCase();
-
       await updateDoc(docRef, {
-        messages: arrayUnion({
-          role: 'user',
-          text,
-          timestamp: new Date().toISOString()
-        })
+        messages: arrayUnion({ role: 'user', text, timestamp: new Date().toISOString() })
       });
 
-      // מילון מונחים לזיהוי ענפים
-      const beautyKeys = ['תספורת', 'זקן', 'שיער', 'פן', 'ספר', 'מספרה', 'barber', 'hair'];
-      const medicalKeys = ['רופא', 'מרפאה', 'שיניים', 'כואב', 'קליניקה', 'בדיקה', 'dentist', 'clinic'];
-      const buildKeys = ['חומרי בניין', 'ברזל', 'בטון', 'שיפוץ', 'קבלן', 'בלוקים', 'אספקה', 'מלט', 'גבס', 'בנייה'];
-      const luxuryKeys = ['יוקרה', 'יוקרתי', 'vip', 'פרימיום', 'זהב', 'luxury', 'אלגנטי'];
-
-      const isBeauty = beautyKeys.some(key => lowerText.includes(key));
-      const isMedical = medicalKeys.some(key => lowerText.includes(key));
-      const isBuild = buildKeys.some(key => lowerText.includes(key));
-      const isLuxury = luxuryKeys.some(key => lowerText.includes(key));
-
-      let updateData: any = {};
-      let rationale = "";
-
-      if (isBeauty) {
-        updateData = {
-          businessType: 'beauty',
-          "appConfig.theme.primaryColor": "#1a1a1a",
-          "seo.title": `${manifest?.businessName || 'מספרה'} | עיצוב שיער מקצועי`,
-        };
-        rationale = "זיהיתי שמדובר במספרה. הגדרתי עיצוב ו-SEO מתאים.";
-      } else if (isMedical) {
-        updateData = {
-          businessType: 'medical',
-          "appConfig.theme.primaryColor": "#0ea5e9",
-          "seo.title": `${manifest?.businessName || 'מרפאה'} | טיפול מומחים`,
-        };
-        rationale = "זיהיתי כוונה רפואית. הגדרתי SEO אמין.";
-      }
-
-      if (!manifest?.driveFolderId && (updateData.businessName || manifest?.businessName)) {
-        updateData.needsInfrastructure = true;
-        rationale += " אני מכין עבורך תיקייה בדרייב ויומן עסקי.";
-      }
-
-      if (Object.keys(updateData).length > 0) {
+      // לוגיקת זיהוי פשוטה להדגמה
+      if (lowerText.includes('ספר') || lowerText.includes('מספרה')) {
         setProposal({
           type: 'smart_update',
-          rationale: rationale,
-          data: updateData
+          rationale: 'זיהיתי שמדובר במספרה. האם להקים תשתית דיגיטלית?',
+          data: { businessType: 'beauty', needsInfrastructure: true }
         });
       }
     } catch (err) {
-      console.error("Analysis Error:", err);
+      console.error(err);
     } finally {
       setIsProcessing(false);
     }
@@ -86,30 +43,31 @@ export function useChatLogic(trialId: string) {
 
   const approveProposal = async () => {
     if (!proposal || !trialId) return;
-
     try {
       const docRef = doc(db, "trials", trialId);
+      
+      // שלב 1: עדכון ה-Manifest ב-Firestore (צד לקוח)
       await updateDoc(docRef, proposal.data);
 
+      // שלב 2: הפעלת תשתית בשרת רק אם נדרש
       if (proposal.data.needsInfrastructure) {
-        // התיקון הקריטי: ייבוא דינמי למניעת זליגת קוד שרת
+        // שימוש ב-Dynamic Import בתוך הפונקציה בלבד!
         const { setupBusinessInfrastructure } = await import("@/app/actions/setup-infrastructure");
-        const businessName = manifest?.businessName || proposal.data.businessName;
-        await setupBusinessInfrastructure(trialId, businessName);
+        await setupBusinessInfrastructure(trialId, manifest?.businessName || proposal.data.businessName);
       }
-
+      
       setProposal(null);
     } catch (err) {
-      console.error("Approval Failed:", err);
+      console.error("Setup failed:", err);
     }
   };
 
-  return { 
-    manifest, 
-    proposal, 
-    isProcessing, 
-    sendAnswer, 
-    approveProposal, 
-    rejectProposal: () => setProposal(null) 
+  return {
+    manifest,
+    proposal,
+    isProcessing,
+    sendAnswer,
+    approveProposal,
+    rejectProposal: () => setProposal(null)
   };
 }
