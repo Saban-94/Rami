@@ -1,123 +1,142 @@
-"use client";
+'use client';
 
-import React, { useState, useEffect, useRef } from "react";
-import { db } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Palette, Users, BarChart3, Moon, Sun, Send, Sparkles, 
-  Paperclip, Zap, ChevronDown, ShoppingBag, Calendar as CalendarIcon, Terminal
-} from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { db } from '@/lib/firebase';
+import { doc, onSnapshot, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { CheckCircle2, User, Phone, Mail, Sparkles, ArrowLeft } from 'lucide-react';
 
-// רכיבי מערכת
-import MobilePreview from "@/components/studio/MobilePreview";
-import CRMManager from "@/components/studio/CRMManager";
-import CalendarManager from "@/components/studio/CalendarManager";
-import { useToast } from "@/components/ui/ToastProvider";
-import { suggestDesignFromPrompt } from "@/app/actions/gemini-brain";
-import { uploadProfileImage } from "@/app/actions/drive-actions";
-
-export default function SabanOSStudioMaster({ params }: { params: { trialId: string } }) {
-  const [activeTab, setActiveTab] = useState<"design" | "crm" | "calendar" | "catalog">("design");
-  const [isDarkMode, setIsDarkMode] = useState(true);
+export default function MagicLinkPage({ params }: { params: { trialId: string } }) {
   const [manifest, setManifest] = useState<any>(null);
-  const [prompt, setPrompt] = useState("");
-  const [debugLog, setDebugLog] = useState<string[]>([]); 
-  const [isCommandMenuOpen, setIsCommandMenuOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { addToast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
 
-  const themeClass = isDarkMode ? "bg-[#020617] text-slate-100" : "bg-[#F8FAFC] text-slate-900";
-
+  // טעינת פרטי העסק כדי להציג לוגו ושם מותג
   useEffect(() => {
-    const unsubscribe = onSnapshot(doc(db, "trials", params.trialId), (snap) => {
+    if (!params.trialId) return;
+    const unsub = onSnapshot(doc(db, "trials", params.trialId), (snap) => {
       if (snap.exists()) setManifest(snap.data());
+      setLoading(false);
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, [params.trialId]);
 
-  // לוגיקת המלשינון
-  const log = (msg: string) => setDebugLog(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 5));
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.phone) return;
 
-  const handleAiAction = async () => {
-    if (!prompt.trim()) return;
-    log(`שולח פקודה: ${prompt}`);
     try {
-      const patch = await suggestDesignFromPrompt({ prompt });
-      log(`התקבל Patch מה-AI`);
-      await updateDoc(doc(db, "trials", params.trialId), patch);
-      log(`Firestore עודכן בהצלחה`);
-      setPrompt("");
+      // יצירת הלקוח בתוך הסאב-קולקשן של העסק הספציפי
+      const customersRef = collection(db, 'trials', params.trialId, 'customers');
+      await addDoc(customersRef, {
+        ...formData,
+        source: 'magic_link',
+        createdAt: serverTimestamp(),
+      });
+      
+      setSubmitted(true);
     } catch (err) {
-      log(`שגיאה: ${err}`);
+      console.error("Join Error:", err);
     }
   };
 
+  const primaryColor = manifest?.appConfig?.theme?.primaryColor || '#10b981';
+
+  if (loading) return (
+    <div className="h-screen flex items-center justify-center bg-[#020617]">
+      <div className="w-8 h-8 border-4 border-green-500 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+
   return (
-    <main className={`h-screen flex flex-col ${themeClass}`} dir="rtl">
-      <div className="flex-1 grid grid-cols-12 overflow-hidden pt-16">
-        
-        {/* Sidebar + המלשינון */}
-        <aside className="col-span-2 p-6 flex flex-col gap-4 border-l border-white/5 bg-black/10">
-          <div className="space-y-2">
-            <button onClick={() => setActiveTab('design')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'design' ? 'bg-green-600' : 'opacity-40'}`}>
-              <Palette size={18}/> סטודיו
-            </button>
-            <button onClick={() => setActiveTab('crm')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'crm' ? 'bg-green-600' : 'opacity-40'}`}>
-              <Users size={18}/> CRM
-            </button>
-            <button onClick={() => setActiveTab('calendar')} className={`w-full p-4 rounded-xl flex items-center gap-3 ${activeTab === 'calendar' ? 'bg-green-600' : 'opacity-40'}`}>
-              <CalendarIcon size={18}/> יומן
-            </button>
-          </div>
+    <main className="min-h-screen bg-[#020617] text-white flex flex-col items-center p-6 font-sans overflow-hidden" dir="rtl">
+      
+      {/* Background Decor */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[50vh] opacity-20 blur-[120px] rounded-full pointer-events-none" 
+           style={{ backgroundColor: primaryColor }} />
 
-          {/* המלשינון בתחתית ה-Sidebar */}
-          <div className="mt-auto p-4 bg-black/40 rounded-2xl border border-white/5 font-mono text-[9px] text-green-400">
-            <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-1 uppercase"><Terminal size={10}/> Debug Console</div>
-            {debugLog.map((l, i) => <div key={i} className="truncate">{l}</div>)}
-          </div>
-        </aside>
-
-        {/* מרכז העבודה */}
-        <section className="col-span-6 p-10 overflow-y-auto">
-          {activeTab === 'design' && (
-            <div className="space-y-8">
-              <h1 className="text-4xl font-black italic italic">STUDIO CORE</h1>
-              
-              <div className="p-8 bg-white/5 rounded-[3rem] border border-white/10 relative">
-                <div className="flex items-center gap-3 mb-4 relative">
-                  <div className="relative flex-1">
-                    <input 
-                      type="text" 
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      className="w-full bg-black/40 border border-white/10 rounded-2xl p-5 pr-14 outline-none focus:border-green-500"
-                      placeholder="שלח פקודה ל-AI..."
-                    />
-                    {/* הסיכה כאן! */}
-                    <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-green-500 z-10"
-                    >
-                      <Paperclip size={20} />
-                    </button>
-                    <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => log("העלאת קובץ הופעלה")} />
-                  </div>
-                  <button onClick={handleAiAction} className="bg-green-600 p-5 rounded-2xl"><Send size={20}/></button>
-                </div>
+      <AnimatePresence mode="wait">
+        {!submitted ? (
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="w-full max-w-md mt-12 z-10"
+          >
+            {/* Business Identity */}
+            <div className="text-center mb-10">
+              <div className="w-20 h-20 bg-white/10 rounded-3xl mx-auto mb-4 flex items-center justify-center border border-white/10 overflow-hidden backdrop-blur-xl">
+                {manifest?.appConfig?.theme?.logo ? (
+                  <img src={manifest.appConfig.theme.logo} alt="Logo" className="w-full h-full object-contain p-2" />
+                ) : (
+                  <Sparkles size={32} style={{ color: primaryColor }} />
+                )}
               </div>
+              <h1 className="text-3xl font-black italic tracking-tighter uppercase">{manifest?.businessName || 'Join Us'}</h1>
+              <p className="opacity-60 text-sm mt-2 font-bold italic">הצטרפו לקהילה שלנו וקבלו עדכונים והטבות</p>
             </div>
-          )}
 
-          {activeTab === 'crm' && <CRMManager trialId={params.trialId} />}
-          {activeTab === 'calendar' && <CalendarManager trialId={params.trialId} />}
-        </section>
+            {/* Registration Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="relative">
+                <User className="absolute right-5 top-1/2 -translate-y-1/2 opacity-30" size={18} />
+                <input 
+                  type="text" required placeholder="שם מלא"
+                  value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 pr-14 pl-4 text-sm outline-none focus:border-white/30 transition-all"
+                />
+              </div>
+              <div className="relative">
+                <Phone className="absolute right-5 top-1/2 -translate-y-1/2 opacity-30" size={18} />
+                <input 
+                  type="tel" required placeholder="טלפון"
+                  value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 pr-14 pl-4 text-sm outline-none focus:border-white/30 transition-all"
+                />
+              </div>
+              <div className="relative">
+                <Mail className="absolute right-5 top-1/2 -translate-y-1/2 opacity-30" size={18} />
+                <input 
+                  type="email" placeholder="אימייל (אופציונלי)"
+                  value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 pr-14 pl-4 text-sm outline-none focus:border-white/30 transition-all"
+                />
+              </div>
 
-        {/* האייפון בצד */}
-        <aside className="col-span-4 flex items-center justify-center bg-black/5">
-           <MobilePreview manifest={manifest} />
-        </aside>
-      </div>
+              <button 
+                type="submit"
+                className="w-full py-5 rounded-2xl font-black italic uppercase tracking-widest shadow-2xl transition-all active:scale-95 flex items-center justify-center gap-2"
+                style={{ backgroundColor: primaryColor }}
+              >
+                הרשמה מהירה <CheckCircle2 size={18} />
+              </button>
+            </form>
+          </motion.div>
+        ) : (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center mt-32 space-y-6 z-10"
+          >
+            <div className="w-24 h-24 bg-green-500 rounded-full mx-auto flex items-center justify-center shadow-[0_0_50px_rgba(34,197,94,0.4)]">
+              <CheckCircle2 size={48} className="text-white" />
+            </div>
+            <h2 className="text-4xl font-black italic">תודה, {formData.name.split(' ')[0]}!</h2>
+            <p className="opacity-60 font-bold tracking-tight">הפרטים שלך נקלטו בהצלחה במערכת של {manifest?.businessName}.</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="text-xs opacity-40 flex items-center gap-2 mx-auto"
+            >
+              <ArrowLeft size={14} /> חזרה לדף הבית
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <footer className="mt-auto pb-8 opacity-20 text-[10px] font-black uppercase tracking-[0.2em]">
+        Powered by SabanOS Pro
+      </footer>
     </main>
   );
 }
