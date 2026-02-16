@@ -1,72 +1,57 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-const admin = require('firebase-admin');
-const pino = require('pino');
+// פונקציה ליצירת לקוח חדש או עדכון קיים באופן אוטומטי
+async function autoUpdateCustomer(trialId, msg) {
+    const phone = msg.key.remoteJid.replace('@s.whatsapp.net', '');
+    const messageContent = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
 
-// התחברות ל-Firebase עם הקובץ שיצרנו
-const serviceAccount = require('./serviceAccountKey.json');
+    // מיקום ב-Database: trials -> {trialId} -> customers -> {phone}
+    const customerRef = db
+        .collection('trials')
+        .doc(trialId)
+        .collection('customers')
+        .doc(phone);
 
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-}
-const db = admin.firestore();
+    try {
+        const doc = await customerRef.get();
 
-async function startWhatsAppAgent(trialId) {
-    // יצירת תיקיית סשן לשמירת החיבור
-    const { state, saveCreds } = await useMultiFileAuthState(`./server/auth_sessions/${trialId}`);
-
-    const sock = makeWASocket({
-        auth: state,
-        logger: pino({ level: 'silent' }),
-        printQRInTerminal: true // לדיבאג ראשוני
-    });
-
-    sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
-
-        if (qr) {
-            // עדכון ה-QR האמיתי ב-DB לסריקה בסטודיו
-            console.log(`[${trialId}] QR Code Updated - Waiting for scan...`);
-            await db.doc(`trials/${trialId}/whatsapp_agent/status`).set({
-                qr: qr,
-                connected: false,
-                lastUpdate: admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+        if (!doc.exists) {
+            // ✨ יצירת לקוח חדש אוטומטית (Collection ייוצר מעצמו)
+            console.log(`🌟 Creating new customer document for: ${phone}`);
+            await customerRef.set({
+                phone: phone,
+                name: "לקוח חדש (WhatsApp)", // ניתן לחלץ את השם מהפרופיל אם קיים
+                source: "whatsapp_bot",
+                status: "active",
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                lastMessage: messageContent,
+                messagesCount: 1
+            });
+        } else {
+            // 🔄 עדכון לקוח קיים
+            console.log(`📝 Updating existing customer: ${phone}`);
+            await customerRef.update({
+                lastMessage: messageContent,
+                lastContact: admin.firestore.FieldValue.serverTimestamp(),
+                messagesCount: admin.firestore.FieldValue.increment(1)
+            });
         }
 
-        if (connection === 'open') {
-            console.log(`[${trialId}] ✅ Connected Successfully!`);
-            await db.doc(`trials/${trialId}/whatsapp_agent/status`).set({
-                connected: true,
-                qr: null, // מנקים את ה-QR אחרי חיבור
-                lastUpdate: admin.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-        }
+        // שמירת ההודעה בהיסטוריית ההודעות (Sub-collection נוסף)
+        await customerRef.collection('chat_history').add({
+            text: messageContent,
+            role: "user",
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
 
-        if (connection === 'close') {
-            const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-            if (shouldReconnect) {
-                console.log('Reconnecting...');
-                startWhatsAppAgent(trialId);
-            }
-        }
-    });
-
-    sock.ev.on('creds.update', saveCreds);
-
-    // לוגיקה בסיסית של AI למענה (דוגמה)
-    sock.ev.on('messages.upsert', async ({ messages }) => {
-        const msg = messages[0];
-        if (!msg.key.fromMe && msg.message) {
-            const remoteJid = msg.key.remoteJid;
-            const text = msg.message.conversation || msg.message.extendedTextMessage?.text;
-            
-            console.log(`Incoming message from ${remoteJid}: ${text}`);
-            // כאן נשלב את הקריאה ל-Gemini API בהמשך
-        }
-    });
+    } catch (error) {
+        console.error("Error in auto-sync to Firestore:", error);
+    }
 }
 
-// הפעלה (תוכל להריץ בלופ על רשימת Trial IDs מה-DB)
-startWhatsAppAgent('YOUR_TRIAL_ID_HERE');
+// שילוב בתוך מאזין ההודעות של השרת
+sock.ev.on('messages.upsert', async ({ messages }) => {
+    const msg = messages[0];
+    if (!msg.key.fromMe && msg.message) {
+        // קריאה לפונקציית היצירה האוטומטית
+        await autoUpdateCustomer('יוסי-הספר-qgcym', msg);
+    }
+});
