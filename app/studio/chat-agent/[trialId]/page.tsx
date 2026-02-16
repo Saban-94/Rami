@@ -9,10 +9,9 @@ import {
   Moon, Sun, Send, Sparkles 
 } from "lucide-react";
 import { useToast } from "@/components/ui/ToastProvider";
-import { suggestDesignFromPrompt } from "@/app/actions/gemini-brain";
 
-// ייבוא הרכיב - וודא שהנתיב והקובץ קיימים בתיקיית components/studio/
-import MobilePreview from "../../../../components/studio/MobilePreview";
+// ייבוא אבסולוטי משורש הפרויקט
+import MobilePreview from "@/components/studio/MobilePreview";
 
 export default function SabanOSStudio({ params }: { params: { trialId: string } }) {
   const [activeTab, setActiveTab] = useState<"content" | "design" | "analytics">("design");
@@ -39,7 +38,7 @@ export default function SabanOSStudio({ params }: { params: { trialId: string } 
     try {
       const docRef = doc(db, "trials", params.trialId);
       await updateDoc(docRef, patch);
-      addToast("העיצוב עודכן", "success");
+      addToast("העיצוב עודכן בהצלחה", "success");
     } catch (err) {
       addToast("שגיאה בעדכון", "error");
     }
@@ -54,50 +53,50 @@ export default function SabanOSStudio({ params }: { params: { trialId: string } 
   return (
     <main className={`h-screen overflow-hidden flex flex-col ${isDarkMode ? 'bg-[#020617] text-white' : 'bg-[#F8FAFC] text-slate-900'}`}>
       <Navigation />
-      
       <div className="flex-1 grid grid-cols-12 gap-0 pt-16">
         
         {/* Sidebar */}
         <aside className="col-span-2 border-l border-white/5 bg-black/20 p-6 flex flex-col gap-4">
           <div className="space-y-2">
-            <button onClick={() => setActiveTab('design')} className={`w-full p-4 rounded-2xl flex items-center gap-3 ${activeTab === 'design' ? 'bg-green-600' : 'hover:bg-white/5'}`}>
+            <button onClick={() => setActiveTab('design')} className={`w-full p-4 rounded-2xl flex items-center gap-3 transition-all ${activeTab === 'design' ? 'bg-green-600 text-white shadow-lg' : 'hover:bg-white/5'}`}>
               <Palette size={18}/> <span className="text-sm font-bold">עורך ויזואלי</span>
             </button>
-            <button onClick={() => setActiveTab('analytics')} className={`w-full p-4 rounded-2xl flex items-center gap-3 ${activeTab === 'analytics' ? 'bg-green-600' : 'hover:bg-white/5'}`}>
+            <button onClick={() => setActiveTab('analytics')} className={`w-full p-4 rounded-2xl flex items-center gap-3 transition-all ${activeTab === 'analytics' ? 'bg-green-600 text-white shadow-lg' : 'hover:bg-white/5'}`}>
               <BarChart3 size={18}/> <span className="text-sm font-bold">ביצועים</span>
             </button>
           </div>
-          <button onClick={() => setIsDarkMode(!isDarkMode)} className="mt-auto w-full p-4 bg-white/5 rounded-2xl flex items-center justify-between">
+          <button onClick={() => setIsDarkMode(!isDarkMode)} className="mt-auto w-full p-4 bg-white/5 rounded-2xl flex items-center justify-between transition-all hover:bg-white/10">
             <span className="text-xs font-bold uppercase">Mode</span>
             {isDarkMode ? <Moon size={16} /> : <Sun size={16} />}
           </button>
         </aside>
 
         {/* Main Workspace */}
-        <section className="col-span-6 p-8 overflow-y-auto">
+        <section className="col-span-6 p-8 overflow-y-auto custom-scrollbar">
           <header className="mb-10">
             <h1 className="text-4xl font-black italic uppercase tracking-tighter">Studio Workspace</h1>
-            <p className="opacity-50">עריכה וניהול של {manifest?.businessName}</p>
+            <p className="opacity-50 text-sm">ניהול קריאייטיב: {manifest?.businessName}</p>
           </header>
 
-          <div className="p-8 bg-white/5 rounded-[3rem] border border-white/10 backdrop-blur-xl mb-8">
+          <div className="p-8 bg-white/5 rounded-[3rem] border border-white/10 backdrop-blur-xl mb-8 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-6 opacity-5"><Sparkles size={60} /></div>
             <h2 className="text-xl font-black mb-4 flex items-center gap-2 italic uppercase">AI GEN DESIGNER</h2>
             <div className="flex gap-4">
               <input 
                 type="text" 
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="תאר את השינוי המבוקש..."
-                className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-green-500"
+                placeholder="תאר את השינוי (למשל: תעשה את האפליקציה בזהב)..."
+                className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-5 text-sm outline-none focus:border-green-500 transition-all"
               />
-              <button className="bg-green-600 p-5 rounded-2xl text-white shadow-xl">
+              <button className="bg-green-600 hover:bg-green-500 p-5 rounded-2xl text-white transition-all shadow-xl">
                 <Send size={20} />
               </button>
             </div>
           </div>
         </section>
 
-        {/* Mobile Preview Column */}
+        {/* Mobile Column */}
         <aside className="col-span-4 bg-black/10 flex items-center justify-center relative border-r border-white/5">
            <div className="sticky top-0 h-full w-full flex items-center justify-center p-12">
               <MobilePreview manifest={manifest} />
