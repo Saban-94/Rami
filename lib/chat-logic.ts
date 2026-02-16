@@ -25,11 +25,11 @@ export function useChatLogic(trialId: string) {
         messages: arrayUnion({ role: 'user', text, timestamp: new Date().toISOString() })
       });
 
-      // לוגיקה בסיסית לזיהוי כוונות
-      if (text.includes('ספר') || text.includes('מספרה')) {
+      const lowerText = text.toLowerCase();
+      if (lowerText.includes('ספר') || lowerText.includes('מספרה')) {
         setProposal({
           type: 'setup',
-          rationale: 'זיהיתי עסק יופי, האם להקים תשתית?',
+          rationale: 'זיהיתי עסק יופי. האם להקים תשתית דיגיטלית?',
           data: { businessType: 'beauty', needsInfrastructure: true }
         });
       }
@@ -47,13 +47,13 @@ export function useChatLogic(trialId: string) {
       await updateDoc(docRef, proposal.data);
 
       if (proposal.data.needsInfrastructure) {
-        // ייבוא דינמי מוחלט - מונע מ-Webpack לנתח את הקובץ בזמן ה-Build של הלקוח
-        const setupModule = await import("@/app/actions/setup-infrastructure");
-        await setupModule.setupBusinessInfrastructure(trialId, manifest?.businessName || proposal.data.businessName);
+        // ייבוא דינמי מוחלט - מונע מ-Webpack לנתח את השרשרת בזמן הקימפול
+        const { setupBusinessInfrastructure } = await import("@/app/actions/setup-infrastructure");
+        await setupBusinessInfrastructure(trialId, manifest?.businessName || proposal.data.businessName);
       }
       setProposal(null);
     } catch (err) {
-      console.error("Critical Error in infrastructure setup:", err);
+      console.error("Critical Setup Error:", err);
     }
   };
 
