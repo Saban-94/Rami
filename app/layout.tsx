@@ -7,15 +7,11 @@ import { I18nProvider } from "@/components/I18nProvider";
 const assistant = Assistant({ subsets: ["latin", "hebrew"] });
 
 export const metadata: Metadata = {
-  title: "SabanOS | Smart Business Solutions",
-  description: "מערכת ניהול חכמה לעסקים - יצירת אפליקציות וניהול תשתיות AI",
+  title: "SabanOS Dashboard",
+  description: "מערכת ניהול חכמה לעסקים",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="he" dir="rtl">
       <body className={assistant.className}>
