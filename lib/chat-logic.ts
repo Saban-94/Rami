@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { db } from './firebase';
 import { doc, onSnapshot, updateDoc, arrayUnion } from 'firebase/firestore';
-import { setupBusinessInfrastructure } from "@/app/actions/setup-infrastructure";
 
 export function useChatLogic(trialId: string) {
   const [manifest, setManifest] = useState<any>(null);
