@@ -1,35 +1,31 @@
-/* app/actions/setup-infrastructure.ts */
-import { db } from "@/lib/firebase-admin"; 
+'use server';
+import 'server-only';
+
+import { db } from "@/lib/firebase-admin";
 import { createBusinessStorage } from "@/lib/drive";
 import { createBusinessCalendar } from "@/lib/calendar";
 
 export async function setupBusinessInfrastructure(trialId: string, businessName: string) {
+  console.log(`🚀 Starting infrastructure setup for: ${businessName} (${trialId})`);
+  
   try {
-    console.log(`🚀 Starting Infrastructure Setup for: ${businessName}`);
-
-    // 1. יצירת תיקייה ייחודית בתוך ה-SabanOS_Warehouse בדרייב
-    const driveFolderId = await createBusinessStorage(businessName, trialId);
-
-    // 2. יצירת יומן נפרד בתוך החשבון ramims2026@gmail.com
+    // 1. יצירת אחסון בדרייב
+    const driveFolderId = await createBusinessStorage(businessName);
+    
+    // 2. יצירת יומן גוגל
     const calendarId = await createBusinessCalendar(businessName);
-
-    // 3. עדכון ה-Firestore עם ה-IDs החדשים
-    const docRef = db.collection('trials').doc(trialId);
-    await docRef.update({
+    
+    // 3. עדכון ה-Firestore
+    await db.collection('trials').doc(trialId).update({
       driveFolderId,
       calendarId,
       infrastructureReady: true,
-      setupDate: new Date().toISOString()
+      updatedAt: new Date().toISOString()
     });
 
-    return { 
-      success: true, 
-      driveFolderId, 
-      calendarId 
-    };
-
-  } catch (error: any) {
-    console.error("Infrastructure Setup Failed:", error);
-    return { success: false, error: error.message };
+    return { success: true, driveFolderId, calendarId };
+  } catch (error) {
+    console.error("❌ Infrastructure Setup Failed:", error);
+    throw new Error("Failed to setup business infrastructure");
   }
 }
