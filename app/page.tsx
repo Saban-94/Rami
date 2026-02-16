@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-// וודא שהנתיבים האלו קיימים בתיקיית ה-components שלך
+// וודא שהרכיבים האלו קיימים בנתיב המדויק
 import Navigation from "@/components/Navigation";
 import ContactSection from "@/components/ContactSection";
 
@@ -68,7 +68,6 @@ export default function SabanOSHome() {
     return () => clearInterval(timer);
   }, []);
 
-  // הגדרת משתנה העיצוב לפני ה-return
   const themeClass = isDarkMode ? "bg-[#020510] text-white" : "bg-slate-50 text-slate-900";
 
   return (
@@ -86,15 +85,15 @@ export default function SabanOSHome() {
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
         <div className="flex-1 space-y-8 z-10 text-right">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-500 text-xs font-black uppercase border border-green-500/20">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-green-500/10 text-green-500 text-[10px] font-black uppercase border border-green-500/20">
             <Sparkles size={14} /> SabanOS AI Enterprise v3.0
           </div>
           
-          <h1 className="text-7xl md:text-[90px] font-black leading-[0.85] italic tracking-tighter">
+          <h1 className="text-6xl md:text-[85px] font-black leading-[0.85] italic tracking-tighter">
             העסק שלך <br /> <span className="text-green-500">ב-Autopilot.</span>
           </h1>
           
-          <p className={`text-xl max-w-xl italic ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+          <p className="text-xl max-w-xl opacity-70 italic">
             ניהול חכם למרפאות, מוסכים ומספרות. ה-AI שמנהל תורים ולקוחות בזמן שאתה עובד.
           </p>
           
@@ -105,7 +104,7 @@ export default function SabanOSHome() {
           </div>
         </div>
 
-        {/* iPhone Master Simulator */}
+        {/* iPhone Simulator */}
         <div className="flex-1 relative flex justify-center">
           <div className={`relative border-[12px] rounded-[4rem] h-[650px] w-[320px] shadow-2xl overflow-hidden transition-all ${isDarkMode ? 'border-slate-800 bg-black' : 'border-slate-200 bg-white'}`}>
              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-800 rounded-b-3xl z-50" />
@@ -129,18 +128,17 @@ export default function SabanOSHome() {
                   </div>
 
                   <div className="space-y-4">
-                    {BUSINESS_SAMPLES[activeBiz].events.map((e, i) => (
-                      <div key={i} className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
+                    {BUSINESS_SAMPLES[activeBiz].events.map((e, idx) => (
+                      <div key={idx} className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-100'}`}>
                         <p className="text-xs font-bold" style={{ color: BUSINESS_SAMPLES[activeBiz].color }}>{e}</p>
                         <p className="text-[10px] opacity-40 mt-1 italic">סונכרן ע"י SabanOS AI</p>
                       </div>
                     ))}
                   </div>
 
-                  <div className="mt-auto p-4 bg-black rounded-2xl border border-white/5 font-mono text-[8px] text-green-500 space-y-1">
+                  <div className="mt-auto p-4 bg-black rounded-2xl border border-white/5 font-mono text-[8px] text-green-500">
                     <p className="opacity-50 uppercase tracking-tighter">[AI Auditor Active]</p>
                     <p>{`> Syncing CRM Data...`}</p>
-                    <p>{`> Lead Temp: Hot 🔥`}</p>
                   </div>
                 </motion.div>
              </AnimatePresence>
@@ -148,7 +146,7 @@ export default function SabanOSHome() {
         </div>
       </section>
 
-      {/* Google Reviews Section */}
+      {/* Reviews Section */}
       <section className={`py-24 ${isDarkMode ? 'bg-black/40' : 'bg-white'}`}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col items-center mb-16 gap-4 text-center">
@@ -163,7 +161,7 @@ export default function SabanOSHome() {
                 whileHover={{ y: -10 }}
                 className={`p-8 rounded-[3rem] border transition-all ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white border-slate-200 shadow-xl'}`}
               >
-                <div className="flex items-center gap-4 mb-6 text-right" dir="rtl">
+                <div className="flex items-center gap-4 mb-6 text-right">
                   <img src={rev.avatar} className="w-12 h-12 rounded-full border-2 border-green-500" alt={rev.name} />
                   <div>
                     <div className="flex text-yellow-500 gap-0.5 mb-1">
