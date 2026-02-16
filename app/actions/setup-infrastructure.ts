@@ -1,8 +1,5 @@
 /* app/actions/setup-infrastructure.ts */
-"use server";
-
-// שימוש בנתיב אבסולוטי עם @ - וודא שה-A ב-firebaseAdmin גדולה בדיוק כמו בשם הקובץ!
-import { db } from "@/lib/firebaseAdmin";
+import { db } from "@/lib/firebase-admin"; 
 import { createBusinessStorage } from "@/lib/drive";
 import { createBusinessCalendar } from "@/lib/calendar";
 
