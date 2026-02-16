@@ -1,13 +1,14 @@
-import * as admin from 'firebase-admin';
+/* lib/firebaseAdmin.ts */
+import admin from 'firebase-admin';
 
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
       credential: admin.credential.cert({
-        projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_ADMIN_CLIENT_EMAIL,
-        // התיקון כאן הופך את ה-\n למחרוזת תקינה עבור השרת
-        privateKey: process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        // טיפול קריטי בתווי ירידת שורה במפתח הפרטי
+        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
       }),
     });
   } catch (error) {
@@ -15,4 +16,4 @@ if (!admin.apps.length) {
   }
 }
 
-export const dbAdmin = admin.firestore();
+export const db = admin.firestore();
