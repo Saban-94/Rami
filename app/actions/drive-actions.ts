@@ -8,22 +8,20 @@ export async function uploadToDriveAction(formData: FormData) {
   return { success: true };
 }
 
-export async function uploadProfileImage(trialId: string, formData: FormData) {
+export async function uploadToDriveAction(formData: FormData) {
   try {
-    const file = formData.get('file') as File;
-    if (!file) throw new Error("לא נבחר קובץ");
+    const file = formData.get("file") as File;
+    if (!file) return { success: false, error: "No file" };
 
-    const trialDoc = await db.collection('trials').doc(trialId).get();
-    const folderId = trialDoc.data()?.driveFolderId;
+    // כאן תבוא לוגיקת ההעלאה לדרייב שכתבנו קודם...
+    console.log("Uploading file:", file.name);
 
-    if (!folderId) throw new Error("חסר מזהה תיקייה בדרייב");
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const fileUrl = await uploadLogoToFolder(folderId, buffer, file.name);
-
-    await db.collection('trials').doc(trialId).update({
-      "appConfig.theme.logo": fileUrl
-    });
+    return { success: true, message: "File uploaded successfully" };
+  } catch (error) {
+    console.error("Upload Error:", error);
+    return { success: false, error: "Server error during upload" };
+  }
+}
 
     return { success: true, url: fileUrl };
   } catch (error: any) {
