@@ -3,7 +3,8 @@ const qrcode = require('qrcode-terminal');
 const admin = require('firebase-admin');
 const path = require('path');
 
-// 1. אתחול Firebase Admin (וודא שהקובץ serviceAccountKey.json נמצא בתיקייה)
+// 1. אתחול Firebase Admin
+// וודא שהקובץ serviceAccountKey.json נמצא פיזית בתיקיית server/
 const serviceAccount = require('./serviceAccountKey.json');
 
 if (!admin.apps.length) {
@@ -14,11 +15,10 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-// מזהה ה-Trial (במציאות כדאי להעביר את זה כארגומנט או משתנה סביבה)
-// כרגע מוגדר לפי ה-ID שמופיע בכתובת שלך
+// מזהה ה-Trial שאליו השרת יתחבר
 const trialId = "NhbnQKJjZCUWdtWAIdPy"; 
 
-console.log(`🚀 Starting SabanOS WhatsApp Server for Trial: ${trialId}`);
+console.log(`🚀 SabanOS WhatsApp Server starting for Trial: ${trialId}`);
 
 const client = new Client({
     authStrategy: new LocalAuth({
@@ -30,8 +30,8 @@ const client = new Client({
     }
 });
 
-// פונקציית עזר לעדכון הסטטוס ב-Firestore (הלב של המלשינון)
-async function updateFirestoreStatus(data) {
+// פונקציית עזר לעדכון הסטטוס והדופק (הלב של המלשינון)
+async function updateFirestoreStatus(data = {}) {
     try {
         await db.collection('trials')
             .doc(trialId)
@@ -39,27 +39,27 @@ async function updateFirestoreStatus(data) {
             .doc('status')
             .set({
                 ...data,
-                lastServerPulse: admin.firestore.FieldValue.serverTimestamp(),
+                lastServerPulse: admin.firestore.FieldValue.serverTimestamp(), // שולח דופק
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
-        console.log('📡 Firestore Sync:', data.status || 'Pulse Updated');
+        console.log('📡 Pulse sent to Firestore');
     } catch (err) {
-        console.error('❌ Firestore Update Error:', err);
+        console.error('❌ Firestore Update Error:', err.message);
     }
 }
 
-// מנגנון Heartbeat - שולח "דופק" כל 30 שניות כדי שהסטודיו ידע שהשרת חי
+// מנגנון "דופק" - שולח עדכון כל 20 שניות כדי שהסטודיו ידע שהשרת חי
 setInterval(() => {
-    updateFirestoreStatus({}); 
-}, 30000);
+    updateFirestoreStatus(); 
+}, 20000);
 
-// --- אירועי הלקוח ---
+// --- אירועי WhatsApp ---
 
 client.on('qr', (qr) => {
-    console.log('🔍 New QR Received!');
-    qrcode.generate(qr, { small: true }); // מציג גם בטרמינל
+    console.log('🔍 New QR Code generated!');
+    qrcode.generate(qr, { small: true }); // מציג בטרמינל
     
-    // עדכון ה-QR ל-Firestore כדי שהסטודיו יציג אותו
+    // מעדכן את ה-QR ל-Firestore כדי שהסטודיו יציג אותו
     updateFirestoreStatus({
         qr: qr,
         status: 'waiting_for_scan'
@@ -70,38 +70,26 @@ client.on('ready', () => {
     console.log('✅ WhatsApp Client is READY!');
     updateFirestoreStatus({
         status: 'authenticated',
-        qr: '', // מוחק את ה-QR כי כבר התחברנו
-        lastLogin: admin.firestore.FieldValue.serverTimestamp()
+        qr: '' // מוחק את ה-QR כי כבר התחברנו
     });
-});
-
-client.on('authenticated', () => {
-    console.log('🔓 Authenticated successfully');
 });
 
 client.on('auth_failure', (msg) => {
     console.error('❌ Authentication failure:', msg);
-    updateFirestoreStatus({ status: 'auth_error', message: msg });
+    updateFirestoreStatus({ status: 'error', message: msg });
 });
 
 client.on('disconnected', (reason) => {
-    console.log('🔌 Client was logged out:', reason);
-    updateFirestoreStatus({ status: 'disconnected', qr: '' });
-});
-
-// טיפול בהודעות נכנסות (דוגמה בסיסית לשילוב AI בעתיד)
-client.on('message', async (msg) => {
-    if (msg.body.toLowerCase() === 'פינג') {
-        msg.reply('פונג! SabanOS פועל.');
-    }
+    console.log('🔌 Disconnected:', reason);
+    updateFirestoreStatus({ status: 'disconnected' });
 });
 
 // הפעלה
 client.initialize();
 
-// טיפול בסגירה מסודרת
+// טיפול בסגירה
 process.on('SIGINT', async () => {
-    console.log('Shutting down...');
+    console.log('Shutting down server...');
     await client.destroy();
     process.exit(0);
 });
