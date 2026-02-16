@@ -129,31 +129,23 @@ export function useChatLogic(trialId: string) {
   };
 
   // 3. פונקציית אישור הצעה - כולל הפעלת Setup פיזי בשרת
-  const approveProposal = async () => {
-    if (!proposal || !trialId) return;
-    
-    try {
-      const docRef = doc(db, "trials", trialId);
-      
-      // עדכון הנתונים ב-Firestore
-      await updateDoc(docRef, proposal.data);
+const approveProposal = async () => {
+  if (!proposal || !trialId) return;
+  try {
+    const { doc, updateDoc } = await import('firebase/firestore');
+    const docRef = doc(db, "trials", trialId);
+    await updateDoc(docRef, proposal.data);
 
-      // אם נדרשת תשתית פיזית (דרייב/יומן)
-      if (proposal.data.needsInfrastructure) {
-        console.log("🛠️ AI Infrastructure Triggered...");
-        const businessName = manifest?.businessName || proposal.data.businessName;
-        
-        const result = await setupBusinessInfrastructure(trialId, businessName);
-        if (result.success) {
-          console.log("✅ Physical Setup Complete:", result);
-        }
-      }
-
-      setProposal(null); // סגירת ההצעה ב-Console
-    } catch (err) {
-      console.error("Proposal Approval Failed:", err);
+    if (proposal.data.needsInfrastructure) {
+      // כאן הקסם: הייבוא קורה רק בשרת בזמן אמת
+      const { setupBusinessInfrastructure } = await import("@/app/actions/setup-infrastructure");
+      await setupBusinessInfrastructure(trialId, manifest?.businessName || proposal.data.businessName);
     }
-  };
+    setProposal(null);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const rejectProposal = () => setProposal(null);
 
