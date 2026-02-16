@@ -1,7 +1,7 @@
 /* app/actions/setup-infrastructure.ts */
 "use server";
 
-import { db } from "@/lib/firebaseAdmin";
+import { db } from "../../lib/firebaseAdmin";
 import { createBusinessStorage } from "@/lib/drive";
 import { createBusinessCalendar } from "@/lib/calendar";
 
