@@ -21,14 +21,9 @@ const nextConfig = {
         path: false,
         stream: false,
         crypto: false,
-        "node:events": false,
-        "node:process": false,
-        "node:util": false,
-        "node:buffer": false,
-        "node:stream": false,
       };
 
-      // טיפול ספציפי בשגיאת UnhandledSchemeError עבור סכימת node:
+      // שיתוק שגיאת UnhandledSchemeError עבור סכימת node:
       config.module.rules.push({
         test: /node:/,
         use: 'null-loader',
