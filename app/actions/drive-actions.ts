@@ -1,41 +1,35 @@
-/* app/actions/drive-actions.ts */
-"use client"; // אנחנו נשתמש בזה כ-Client Action שקורא ל-API או Server Action אמיתי
+"use server";
 
-import { db } from "@/lib/firebase"; // Client SDK
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { db } from "@/lib/firebase-admin";
+import { createBusinessStorage, uploadLogoToFolder } from "@/lib/drive";
 
-export async function uploadToDriveAction(formData: FormData) {
+/**
+ * העלאת תמונת פרופיל לתיקיית הדרייב של העסק
+ */
+export async function uploadProfileImage(trialId: string, formData: FormData) {
   try {
-    const file = formData.get("file") as File;
-    const folderId = formData.get("folderId") as string;
-    const trialId = formData.get("trialId") as string;
+    const file = formData.get('file') as File;
+    if (!file) throw new Error("לא נמצא קובץ להעלאה");
 
-    if (!file || !folderId) throw new Error("Missing file or folderId");
+    // משיכת נתוני ה-Trial כדי למצוא את ה-folderId
+    const doc = await db.collection('trials').doc(trialId).get();
+    const data = doc.data();
+    
+    if (!data?.driveFolderId) {
+      throw new Error("לא הוקמה תשתית אחסון לעסק זה");
+    }
 
-    // שליחה ל-API Route הפנימי (כדי להשתמש ב-Node Runtime של Google APIs)
-    const response = await fetch("/api/drive/upload", {
-      method: "POST",
-      body: formData,
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const fileUrl = await uploadLogoToFolder(data.driveFolderId, buffer, file.name);
+
+    // עדכון ה-Firestore עם הקישור החדש
+    await db.collection('trials').doc(trialId).update({
+      "appConfig.theme.logo": fileUrl
     });
 
-    const result = await response.json();
-
-    if (result.success) {
-      // עדכון ה-Firestore שהלקוח העלה קובץ - כדי שהדוקטור ישמע "דינג"
-      const docRef = doc(db, "trials", trialId);
-      await updateDoc(docRef, {
-        trainingHistory: arrayUnion({
-          date: new Date().toLocaleString("he-IL"),
-          text: `📁 קובץ חדש הועלה: ${file.name}`,
-          fileLink: result.webViewLink
-        })
-      });
-      return { success: true, link: result.webViewLink };
-    }
-    
-    return { success: false };
-  } catch (error) {
-    console.error("Upload Action Error:", error);
-    return { success: false };
+    return { success: true, url: fileUrl };
+  } catch (error: any) {
+    console.error("Upload error:", error);
+    return { success: false, error: error.message };
   }
 }
