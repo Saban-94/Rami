@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { processStudioMessage } from "@/app/actions/gemini-brain"; // ייבוא ה-AI Brain
 import { useToast } from "@/components/ui/ToastProvider";
-
+export async function processStudioMessage(trialId: string, message: string) {
 const CATEGORIES = [
   { id: 'barber', name: 'יופי וטיפוח', icon: "💇‍♂️" },
   { id: 'food', name: 'מזון ומשקאות', icon: "☕" },
