@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect, useRef } from "react";
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc } from "firebase/firestore";
@@ -13,7 +14,7 @@ import MobilePreview from "@/components/studio/MobilePreview";
 import CRMManager from "@/components/studio/CRMManager";
 import { useToast } from "@/components/ui/ToastProvider";
 import { suggestDesignFromPrompt } from "@/app/actions/gemini-brain";
-import { uploadToDriveAction } from "@/app/actions/drive-actions";
+import { uploadProfileImage } from "@/app/actions/drive-actions";
 
 const QUICK_COMMANDS = [
   { label: "✨ מראה יוקרתי", prompt: "תהפוך את האפליקציה ליוקרתית עם צבעי זהב ושחור" },
@@ -47,15 +48,21 @@ export default function SabanOSStudioPro({ params }: { params: { trialId: string
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !params.trialId) return;
     
-    addToast("מעלה קובץ לתשתית העסק...", "success");
+    addToast("מעלה לוגו ומסנכרן תשתית...", "success");
     const formData = new FormData();
     formData.append("file", file);
     
-    const result = await uploadToDriveAction(formData);
-    if (result.success) {
-      addToast("הקובץ נשמר בדרייב בהצלחה", "success");
+    try {
+      const result = await uploadProfileImage(params.trialId, formData);
+      if (result.success) {
+        addToast("הלוגו עודכן בהצלחה!", "success");
+      } else {
+        addToast(`שגיאה: ${result.error}`, "error");
+      }
+    } catch (err) {
+      addToast("תקלה בתקשורת עם השרת", "error");
     }
   };
 
@@ -64,10 +71,14 @@ export default function SabanOSStudioPro({ params }: { params: { trialId: string
     if (!finalPrompt.trim()) return;
     
     addToast("SabanOS AI מעבד את העיצוב...", "success");
-    const patch = await suggestDesignFromPrompt({ prompt: finalPrompt });
-    const docRef = doc(db, "trials", params.trialId);
-    await updateDoc(docRef, patch);
-    setPrompt("");
+    try {
+      const patch = await suggestDesignFromPrompt({ prompt: finalPrompt });
+      const docRef = doc(db, "trials", params.trialId);
+      await updateDoc(docRef, patch);
+      setPrompt("");
+    } catch (err) {
+      addToast("ה-AI נתקל בקשיים, נסה שוב", "error");
+    }
   };
 
   if (loading) return <div className="h-screen bg-[#020617] flex items-center justify-center text-green-500 font-black animate-pulse">SabanOS Studio Pro...</div>;
@@ -77,7 +88,6 @@ export default function SabanOSStudioPro({ params }: { params: { trialId: string
       <Navigation />
       
       <div className="flex-1 grid grid-cols-12 gap-0 pt-16">
-        
         {/* Sidebar */}
         <aside className={`col-span-2 border-l p-6 flex flex-col gap-4 transition-colors ${isDarkMode ? 'border-white/5 bg-black/20' : 'border-slate-200 bg-slate-50'}`}>
           <div className="space-y-2">
@@ -104,19 +114,18 @@ export default function SabanOSStudioPro({ params }: { params: { trialId: string
           </button>
         </aside>
 
-        {/* Main Canvas */}
+        {/* Main Workspace */}
         <section className="col-span-6 p-10 overflow-y-auto custom-scrollbar">
           <AnimatePresence mode="wait">
             {activeTab === 'design' && (
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                 <header>
                   <h1 className="text-5xl font-black italic uppercase tracking-tighter">Studio Editor</h1>
-                  <p className="opacity-50 text-sm font-bold">עריכה חכמה עבור {manifest?.businessName}</p>
+                  <p className="opacity-50 text-sm font-bold uppercase">Creative Control for {manifest?.businessName}</p>
                 </header>
 
-                {/* AI Designer with Commands & Pin */}
                 <div className={`p-8 rounded-[3.5rem] border backdrop-blur-xl ${panelClass} relative group`}>
-                  <h2 className="text-xl font-black mb-6 flex items-center gap-2 italic uppercase">AI Generative Tools</h2>
+                  <h2 className="text-xl font-black mb-6 flex items-center gap-2 italic uppercase">AI Generative Designer</h2>
                   
                   <div className="relative flex items-center gap-3 mb-6">
                     <div className="relative flex-1">
@@ -142,14 +151,13 @@ export default function SabanOSStudioPro({ params }: { params: { trialId: string
                     </button>
                   </div>
 
-                  {/* Quick Commands Chips */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {QUICK_COMMANDS.map((cmd, idx) => (
                       <button
                         key={idx}
                         onClick={() => setPrompt(cmd.prompt)}
                         className={`px-4 py-2 rounded-full text-[10px] font-black uppercase transition-all border ${
-                          isDarkMode ? 'bg-white/5 border-white/10 hover:border-green-500/50' : 'bg-slate-100 border-slate-200 hover:bg-slate-200'
+                          isDarkMode ? 'bg-white/5 border-white/10 hover:border-green-500/50 text-slate-300' : 'bg-slate-100 border-slate-200 hover:bg-slate-200'
                         }`}
                       >
                         {cmd.label}
@@ -164,7 +172,6 @@ export default function SabanOSStudioPro({ params }: { params: { trialId: string
                   </div>
                 </div>
 
-                {/* Theme Tools */}
                 <div className={`p-8 rounded-[3rem] border ${panelClass} grid grid-cols-2 gap-8`}>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase opacity-40">צבע מותג</label>
@@ -202,7 +209,6 @@ export default function SabanOSStudioPro({ params }: { params: { trialId: string
               <MobilePreview manifest={manifest} />
            </div>
         </aside>
-
       </div>
     </main>
   );
