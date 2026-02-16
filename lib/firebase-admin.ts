@@ -1,6 +1,6 @@
-/* lib/firebaseAdmin.ts */
+import "server-only"; // זה יבטיח שהקובץ לא יזלוג לצד הלקוח
 import admin from 'firebase-admin';
-
+// ... שאר הקוד
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
