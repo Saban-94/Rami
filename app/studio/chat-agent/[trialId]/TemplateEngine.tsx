@@ -1,107 +1,83 @@
+/* app/studio/chat-agent/[trialId]/TemplateEngine.tsx */
 "use client";
 
-import React from 'react';
-import { Sparkles, Phone, MapPin, Calendar, CheckCircle2, MessageSquare, Star } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sparkles, Phone, MapPin, Calendar, CheckCircle2, MessageSquare, UploadCloud, FileCheck } from 'lucide-react';
+import { uploadToDriveAction } from "@/app/actions/drive-actions";
 
-export default function TemplateEngine({ manifest }: { manifest: any }) {
+export default function TemplateEngine({ manifest, trialId }: { manifest: any, trialId: string }) {
+  const [uploading, setUploading] = useState(false);
+  const [uploaded, setUploaded] = useState(false);
+
   if (!manifest) return null;
 
   const theme = manifest.appConfig?.theme || {};
-  const isPro = manifest.activeTemplate === "luxury" || manifest.activeTemplate === "pro";
-  
-  // הגדרות צבעים דינמיות לתבנית ה-Pro
-  const primaryColor = isPro ? "#D4AF37" : (theme.primaryColor || "#3b82f6"); // זהב ל-Pro, כחול ל-Free
-  const bgColor = isPro ? "#020617" : "#ffffff";
-  const textColor = isPro ? "#ffffff" : "#0f172a";
-  const cardBg = isPro ? "rgba(255,255,255,0.05)" : "#f8fafc";
-  const borderRadius = theme.borderRadius || (isPro ? "40px" : "12px");
+  const primaryColor = theme.primaryColor || "#3b82f6";
+  const folderId = manifest.driveFolderId || "";
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0] || !folderId) return;
+    
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", e.target.files[0]);
+    formData.append("folderId", folderId);
+    formData.append("trialId", trialId);
+
+    const res = await uploadToDriveAction(formData);
+    setUploading(false);
+    if (res.success) setUploaded(true);
+  };
 
   return (
-    <div 
-      className="flex-1 overflow-y-auto flex flex-col h-full transition-colors duration-700" 
-      style={{ 
-        backgroundColor: bgColor, 
-        color: textColor,
-        fontFamily: theme.fontFamily || 'Inter, sans-serif' 
-      }}
-    >
+    <div className="flex-1 bg-white overflow-y-auto flex flex-col h-full" style={{ fontFamily: 'Inter, sans-serif' }}>
       
-      {/* Badge Pro - מוצג רק בתבנית היוקרה */}
-      {isPro && (
-        <div className="pt-12 px-8">
-           <div className="bg-gradient-to-r from-amber-500 to-yellow-600 text-[8px] font-black text-black px-3 py-1 rounded-full w-fit uppercase tracking-widest flex items-center gap-1 mx-auto">
-             <Star size={8} fill="currentColor"/> Premium Member
-           </div>
-        </div>
-      )}
-
       {/* Hero Section */}
-      <section className={`p-8 ${isPro ? 'pt-6' : 'pt-12'} text-center relative`}>
-        <div 
-          style={{ 
-            backgroundColor: isPro ? `${primaryColor}20` : `${primaryColor}15`, 
-            color: primaryColor,
-            border: isPro ? `1px solid ${primaryColor}40` : 'none'
-          }}
-          className="w-20 h-20 rounded-[2.5rem] mx-auto mb-8 flex items-center justify-center shadow-2xl"
-        >
-          <Sparkles size={40} className={isPro ? "animate-pulse" : ""} />
+      <section className="p-8 pt-10 text-center">
+        <div style={{ backgroundColor: `${primaryColor}15`, color: primaryColor }} className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center shadow-sm">
+          <Sparkles size={32} />
         </div>
-        
-        <h1 className={`text-3xl font-black mb-4 tracking-tight leading-tight ${isPro ? 'bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent' : 'text-slate-900'}`}>
-          {manifest.businessName || "העסק שלך"}
-        </h1>
-        
-        <p className={`${isPro ? 'text-slate-400' : 'text-slate-500'} text-sm font-medium leading-relaxed mb-8 max-w-[240px] mx-auto`}>
-          {manifest.appConfig?.blocks?.[0]?.subtitle || "חווית שירות בסטנדרט אחר"}
-        </p>
-
-        <button 
-          style={{ 
-            backgroundColor: primaryColor, 
-            borderRadius: borderRadius,
-            boxShadow: isPro ? `0 10px 30px -10px ${primaryColor}80` : 'none'
-          }}
-          className={`w-full py-5 ${isPro ? 'text-black font-black' : 'text-white font-bold'} text-xs uppercase tracking-[0.2em] active:scale-95 transition-all`}
-        >
-          {isPro ? "Book Private Session" : "קבע תור עכשיו"}
-        </button>
+        <h1 className="text-2xl font-black text-slate-900 mb-2">{manifest.businessName}</h1>
+        <p className="text-slate-500 text-xs mb-6 px-4">{manifest.appConfig?.blocks?.[0]?.subtitle}</p>
       </section>
 
-      {/* Services Section */}
-      <section className={`p-8 ${isPro ? 'bg-white/5' : 'bg-slate-50/50'} flex-1 rounded-t-[3rem]`}>
-        <h2 className={`text-[10px] font-black uppercase tracking-[0.2em] mb-6 flex items-center gap-2 ${isPro ? 'text-amber-500/60' : 'text-slate-400'}`}>
-          <CheckCircle2 size={12} /> {isPro ? "Premium Services" : "השירותים שלנו"}
+      {/* Upload Block - המנוע החדש */}
+      <section className="px-6 mb-6">
+        <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 text-center transition-all">
+          {uploaded ? (
+            <div className="flex flex-col items-center gap-2 text-emerald-600">
+              <FileCheck size={32} />
+              <span className="text-[10px] font-black uppercase tracking-widest">הקובץ נשמר בתיק הרפואי</span>
+            </div>
+          ) : (
+            <>
+              <UploadCloud size={32} className="mx-auto mb-3 text-slate-400" />
+              <h4 className="text-xs font-bold text-slate-700 mb-4">צילומים או מסמכים רפואיים</h4>
+              <input type="file" id="simulator-upload" hidden onChange={handleFileUpload} disabled={uploading} />
+              <label 
+                htmlFor="simulator-upload"
+                style={{ backgroundColor: uploading ? '#94a3b8' : primaryColor }}
+                className="px-6 py-3 text-white rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-lg inline-block"
+              >
+                {uploading ? "מעלה לדרייב..." : "העלאת קובץ"}
+              </label>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* Services List */}
+      <section className="px-6 flex-1">
+        <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <CheckCircle2 size={12} style={{ color: primaryColor }} /> שירותים נבחרים
         </h2>
-        
-        <div className="grid grid-cols-1 gap-3">
-          {manifest.trainingHistory?.slice(0, 3).map((item: any, i: number) => (
-            <div 
-              key={i} 
-              style={{ backgroundColor: cardBg, borderColor: isPro ? 'rgba(255,255,255,0.1)' : '#f1f5f9' }}
-              className="p-5 rounded-3xl border flex items-center justify-between group transition-all"
-            >
-               <span className="text-xs font-bold">{item.text.split(' ')[0]} ...</span>
-               <div style={{ color: primaryColor }} className="opacity-50 group-hover:opacity-100 transition-opacity">
-                 <Calendar size={14}/>
-               </div>
+        <div className="space-y-2">
+          {manifest.trainingHistory?.slice(-3).map((item: any, i: number) => (
+            <div key={i} className="p-4 bg-white border border-slate-100 rounded-2xl flex items-center justify-between shadow-sm">
+              <span className="text-[11px] font-bold text-slate-600">{item.text.substring(0,25)}</span>
+              <Calendar size={14} style={{ color: primaryColor }} />
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* Footer Contact */}
-      <section className={`p-6 ${isPro ? 'bg-black' : 'bg-white'} border-t ${isPro ? 'border-white/5' : 'border-slate-100'}`}>
-        <div className="flex gap-3">
-          <div className={`flex-1 ${isPro ? 'bg-white text-black' : 'bg-slate-900 text-white'} p-5 rounded-[1.5rem] flex items-center justify-center gap-2 font-black text-[10px] uppercase`}>
-            <Phone size={14} /> WhatsApp
-          </div>
-          <div 
-            style={{ border: `1px solid ${isPro ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}` }}
-            className="p-5 rounded-[1.5rem] flex items-center justify-center"
-          >
-            <MapPin size={16} style={{ color: primaryColor }} />
-          </div>
         </div>
       </section>
     </div>
