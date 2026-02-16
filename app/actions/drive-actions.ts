@@ -1,43 +1,41 @@
-"use server";
+/* app/actions/drive-actions.ts */
+"use client"; // אנחנו נשתמש בזה כ-Client Action שקורא ל-API או Server Action אמיתי
 
-import { google } from 'googleapis';
-import { Readable } from 'stream';
+import { db } from "@/lib/firebase"; // Client SDK
+import { doc, updateDoc, arrayUnion } from "firebase/firestore";
 
-const FOLDER_ID = '12Hnqog3tV83PGGXzQpg6xsnVEQu3RKOw';
-
-// הגדרת הזדהות (דורש קובץ Credentials מ-Google Cloud Console)
-const auth = new google.auth.GoogleAuth({
-  credentials: JSON.parse(process.env.GOOGLE_DRIVE_CREDENTIALS!),
-  scopes: ['https://www.googleapis.com/auth/drive.file'],
-});
-
-const drive = google.drive({ version: 'v3', auth });
-
-export async function uploadProfileImage(formData: FormData) {
+export async function uploadToDriveAction(formData: FormData) {
   try {
-    const file = formData.get('file') as File;
-    if (!file) throw new Error("No file uploaded");
+    const file = formData.get("file") as File;
+    const folderId = formData.get("folderId") as string;
+    const trialId = formData.get("trialId") as string;
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const stream = new Readable();
-    stream.push(buffer);
-    stream.push(null);
+    if (!file || !folderId) throw new Error("Missing file or folderId");
 
-    const response = await drive.files.create({
-      requestBody: {
-        name: `profile_${Date.now()}.jpg`,
-        parents: [FOLDER_ID],
-      },
-      media: {
-        mimeType: file.type,
-        body: stream,
-      },
-      fields: 'id, webViewLink',
+    // שליחה ל-API Route הפנימי (כדי להשתמש ב-Node Runtime של Google APIs)
+    const response = await fetch("/api/drive/upload", {
+      method: "POST",
+      body: formData,
     });
 
-    return { success: true, fileId: response.data.id, url: response.data.webViewLink };
+    const result = await response.json();
+
+    if (result.success) {
+      // עדכון ה-Firestore שהלקוח העלה קובץ - כדי שהדוקטור ישמע "דינג"
+      const docRef = doc(db, "trials", trialId);
+      await updateDoc(docRef, {
+        trainingHistory: arrayUnion({
+          date: new Date().toLocaleString("he-IL"),
+          text: `📁 קובץ חדש הועלה: ${file.name}`,
+          fileLink: result.webViewLink
+        })
+      });
+      return { success: true, link: result.webViewLink };
+    }
+    
+    return { success: false };
   } catch (error) {
-    console.error("Drive Upload Error:", error);
-    return { success: false, error: "Failed to upload to Drive" };
+    console.error("Upload Action Error:", error);
+    return { success: false };
   }
 }
