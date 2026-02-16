@@ -1,14 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: true },
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      // חומת מגן מפני ספריות שרת שזולגות לקוד לקוח
+      // טיפול בשגיאת UnhandledSchemeError עבור node:
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
@@ -21,6 +17,11 @@ const nextConfig = {
         path: false,
         stream: false,
         crypto: false,
+        "node:events": false,
+        "node:process": false,
+        "node:util": false,
+        "node:buffer": false,
+        "node:stream": false,
       };
     }
     return config;
