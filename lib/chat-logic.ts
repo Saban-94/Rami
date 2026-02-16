@@ -1,123 +1,30 @@
-/* lib/chat-logic.ts */
-import { useState, useEffect } from 'react';
-import { db } from './firebase';
-import { doc, onSnapshot, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
+/* עדכון בתוך פונקציית sendAnswer ב-lib/chat-logic.ts */
 
-export function useChatLogic(trialId: string) {
-  const [manifest, setManifest] = useState<any>(null);
-  const [proposal, setProposal] = useState<any>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+// 1. יצירת אובייקט SEO חכם
+let seoUpdate = {};
 
-  // 1. חיבור ל-Firestore עם Real-time Sync
-  useEffect(() => {
-    if (!trialId) return;
-    const docRef = doc(db, "trials", trialId);
-
-    const unsubscribe = onSnapshot(docRef, (snap) => {
-      if (snap.exists()) {
-        setManifest(snap.data());
-      }
-    }, (err) => console.error("Firebase Error:", err));
-
-    return () => unsubscribe();
-  }, [trialId]);
-
-  // 2. פונקציית שליחת הודעה עם ניתוח מחוזק
-  const sendAnswer = async (text: string) => {
-    if (!text || isProcessing || !trialId) return;
-    setIsProcessing(true);
-
-    try {
-      const docRef = doc(db, "trials", trialId);
-      const lowerText = text.toLowerCase();
-
-      // עדכון הצא'ט וההיסטוריה
-      await updateDoc(docRef, {
-        messages: arrayUnion({
-          role: 'user',
-          text,
-          timestamp: new Date().toISOString()
-        })
-      });
-
-      // --- מנוע זיהוי כוונות (NER - Logic Engine) ---
-
-      // א. זיהוי עולם היופי (Barber / Beauty)
-      const beautyKeywords = ['תספורת', 'זקן', 'שיער', 'פן', 'ספר', 'צבע', 'לק', 'גבות', 'מספרה', 'עיצוב שיער', 'hair', 'barber'];
-      if (beautyKeywords.some(key => lowerText.includes(key))) {
-        setProposal({
-          type: 'industry_update',
-          rationale: 'זיהיתי שמדובר בתחום היופי והטיפוח. האם להגדיר תבנית מספרה/סטודיו עם גלריית עבודות?',
-          data: { 
-            businessType: 'beauty',
-            "appConfig.theme.primaryColor": "#111827", // צבע פחם מודרני
-            activeTemplate: 'modern'
-          }
-        });
-      }
-
-      // ב. זיהוי עולם הרפואה (Medical / Health)
-      const medicalKeywords = ['רופא', 'מרפאה', 'שיניים', 'כואב', 'דחוף', 'בדיקה', 'קליניקה', 'טיפול', 'אבחון', 'dentist', 'clinic'];
-      if (medicalKeywords.some(key => lowerText.includes(key))) {
-        setProposal({
-          type: 'industry_update',
-          rationale: 'זיהיתי כוונה רפואית/טיפולית. האם להפעיל תבנית קליניקה עם ניהול תורים מבוסס דחיפות?',
-          data: { 
-            businessType: 'medical',
-            "appConfig.theme.primaryColor": "#0ea5e9" // כחול רפואי
-          }
-        });
-      }
-
-      // ג. זיהוי עולם הבנייה והחומרים (Building Materials - Saban 1994)
-      const buildKeywords = ['חומרי בניין', 'ברזל', 'בטון', 'שיפוץ', 'קבלן', 'בלוקים', 'אספקה', 'מלט', 'גבס', 'בנייה'];
-      if (buildKeywords.some(key => lowerText.includes(key))) {
-        setProposal({
-          type: 'industry_update',
-          rationale: 'זיהיתי תחום של חומרי בניין ותשתיות. האם להגדיר קטלוג מוצרים כבדים ומערכת הצעות מחיר?',
-          data: { 
-            businessType: 'industrial',
-            "appConfig.theme.primaryColor": "#ea580c" // כתום תעשייתי
-          }
-        });
-      }
-
-      // ד. זיהוי דרישת יוקרה (Luxury / VIP)
-      const luxuryKeywords = ['יוקרה', 'יוקרתי', 'vip', 'פרימיום', 'זהב', 'רמה גבוהה', 'luxury', 'premium', 'אלגנטי'];
-      if (luxuryKeywords.some(key => lowerText.includes(key)) && manifest?.activeTemplate !== 'luxury') {
-        setProposal({
-          type: 'tier_upgrade',
-          rationale: 'המילים שבהן השתמשת מעידות על מיתוג VIP. האם לשדרג את האפליקציה לתבנית ה-Luxury Gold שלנו?',
-          data: { activeTemplate: 'luxury' }
-        });
-      }
-
-      // ה. זיהוי שעות/מחירים (Update Context)
-      if (lowerText.includes('עולה') || lowerText.includes('מחיר') || lowerText.includes('שעות') || lowerText.includes('פתוח')) {
-        await updateDoc(docRef, {
-          trainingHistory: arrayUnion({
-            date: new Date().toLocaleString('he-IL'),
-            text: `מידע עסקי חדש: ${text}`
-          })
-        });
-      }
-
-    } catch (err) {
-      console.error("Analysis Error:", err);
-    } finally {
-      setIsProcessing(false);
-    }
+if (isBeauty) {
+  seoUpdate = {
+    "seo.title": `${manifest.businessName || 'מספרה'} | עיצוב שיער וטיפוח`,
+    "seo.description": `מחפשים תספורת ברמה גבוהה? בואו ל${manifest.businessName || 'מספרה'} לעיצוב שיער מקצועי, זקן וטיפוח גברים.`,
+    "seo.keywords": "מספרה, תספורת גברים, עיצוב זקן, ספר בחיפה, תספורת VIP"
   };
-
-  const approveProposal = async () => {
-    if (!proposal || !trialId) return;
-    try {
-      await updateDoc(doc(db, "trials", trialId), proposal.data);
-      setProposal(null);
-    } catch (err) { console.error(err); }
+} else if (isMedical) {
+  seoUpdate = {
+    "seo.title": `${manifest.businessName || 'מרפאה'} | ניהול תורים וטיפול מקצועי`,
+    "seo.description": `מרפאת ${manifest.businessName || 'מומחים'} מציעה טיפולים מתקדמים, קביעת תורים מהירה ושירות אישי.`,
+    "seo.keywords": "מרפאה, רופא שיניים, קביעת תורים, עזרה ראשונה שיניים, קליניקה"
   };
+}
 
-  const rejectProposal = () => setProposal(null);
-
-  return { manifest, proposal, isProcessing, sendAnswer, approveProposal, rejectProposal };
+// 2. הזרקת ה-SEO לתוך ההצעה (Proposal)
+if (Object.keys(seoUpdate).length > 0) {
+  setProposal(prev => ({
+    ...prev,
+    data: { 
+      ...prev?.data, 
+      ...seoUpdate 
+    },
+    rationale: prev?.rationale + " ובנוסף הכנתי עבורך כותרות SEO כדי שתופיע ראשון בגוגל."
+  }));
 }
