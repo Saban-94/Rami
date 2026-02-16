@@ -6,12 +6,12 @@ import { uploadLogoToFolder } from "@/lib/drive";
 export async function uploadProfileImage(trialId: string, formData: FormData) {
   try {
     const file = formData.get('file') as File;
-    if (!file) throw new Error("No file");
+    if (!file) throw new Error("No file selected");
 
     const trialDoc = await db.collection('trials').doc(trialId).get();
     const folderId = trialDoc.data()?.driveFolderId;
 
-    if (!folderId) throw new Error("No Drive folder linked");
+    if (!folderId) throw new Error("Infrastructure missing folder ID");
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const fileUrl = await uploadLogoToFolder(folderId, buffer, file.name);
@@ -22,6 +22,7 @@ export async function uploadProfileImage(trialId: string, formData: FormData) {
 
     return { success: true, url: fileUrl };
   } catch (error: any) {
+    console.error("Upload error:", error);
     return { success: false, error: error.message };
   }
 }
