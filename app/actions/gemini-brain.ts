@@ -2,7 +2,6 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// הגדרת המודל - וודא שהגדרת ב-Vercel משתנה סביבה בשם GEMINI_API_KEY
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function suggestDesignFromPrompt({ prompt }: { prompt: string }) {
@@ -10,31 +9,32 @@ export async function suggestDesignFromPrompt({ prompt }: { prompt: string }) {
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
     const systemPrompt = `
-      You are a luxury UI designer for SabanOS Studio. 
-      Your task is to return ONLY a JSON object that modifies the business application theme.
-      The JSON structure should be:
+      You are the SabanOS Business Architect. Your response must be ONLY a valid JSON object.
+      You can modify:
+      1. Theme (primaryColor, darkMode, fonts)
+      2. Content (businessName, marketingSlogan)
+      3. Catalog (products: [{name, price, salePrice, isSelected, description}])
+      4. Layout (sections order)
+
+      Context: If the user asks for "Sale", create a discount on existing products. 
+      If user asks for "Post advice", provide marketing advice in a field called "marketingAdvice".
+      
+      Structure:
       {
-        "appConfig.theme.primaryColor": "HEX_COLOR",
-        "appConfig.theme.darkMode": boolean
+        "appConfig.theme.primaryColor": "HEX",
+        "appConfig.theme.fontFamily": "STRING",
+        "businessName": "STRING",
+        "marketingAdvice": "HEBREW_TEXT",
+        "catalog.products": [...],
+        "sections": [...]
       }
-      If the user asks for "luxury" or "gold", use #C8A55A.
-      If they ask for "dark", set darkMode to true.
-      Return ONLY the JSON, no markdown, no explanation.
     `;
 
     const result = await model.generateContent(`${systemPrompt}\n\nUser request: ${prompt}`);
-    const response = await result.response;
-    const text = response.text();
-    
-    // ניקוי הטקסט למקרה שה-AI החזיר סימני Markdown
-    const cleanJson = text.replace(/```json|```/g, "").trim();
-    
+    const cleanJson = result.response.text().replace(/```json|```/g, "").trim();
     return JSON.parse(cleanJson);
   } catch (error) {
     console.error("Gemini Error:", error);
-    // פולבק במקרה של שגיאה כדי שהמערכת לא תקרוס
-    return {
-      "appConfig.theme.primaryColor": "#10b981"
-    };
+    return { error: "Failed to sync with Gemini Brain" };
   }
 }
