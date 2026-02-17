@@ -2,7 +2,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const admin = require('firebase-admin');
 const path = require('path');
-
+const trialId = "NhbnQKJjZCUWdtWAIdPy"; // וודא שזה ה-ID שמופיע בדפדפן
 // 1. אתחול Firebase Admin
 // וודא שהקובץ serviceAccountKey.json נמצא פיזית בתיקיית server/
 const serviceAccount = require('./serviceAccountKey.json');
