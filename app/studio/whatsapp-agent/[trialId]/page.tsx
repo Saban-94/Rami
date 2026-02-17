@@ -20,7 +20,6 @@ export default function WhatsAppAgentPage() {
   const docRef = useMemo(() => {
     if (!db || !trialId) return null;
     try {
-      // יצירת נתיב ישיר למסמך הסטטוס
       return doc(db, "trials", trialId, "whatsapp_agent", "status");
     } catch (e) {
       console.error("Firebase Path Error:", e);
@@ -28,21 +27,21 @@ export default function WhatsAppAgentPage() {
     }
   }, [trialId]);
 
-  // שימוש ב-Hook להאזנה בזמן אמת
+  // האזנה לנתונים בזמן אמת מה-Firestore
   const [statusDoc, loading, error] = useDocumentData(docRef);
 
-  // אפקט לאתחול המסמך במידה והוא חסר ב-Firestore
+  // אפקט לאתחול המסמך במידה והוא חסר
   useEffect(() => {
     async function initDoc() {
       if (loading || !docRef || statusDoc) return;
 
-      addLog("🛠️ בודק סנכרון מול Firestore...");
+      addLog("🛠️ מסנכרן מול ה-Database...");
       try {
         await setDoc(docRef, {
           status: 'initializing',
           updatedAt: serverTimestamp()
         }, { merge: true });
-        addLog("✅ סנכרון ראשוני הושלם.");
+        addLog("✅ סנכרון ראשוני הצליח.");
       } catch (e: any) {
         addLog(`❌ שגיאת חיבור: ${e.message}`);
       }
@@ -60,17 +59,16 @@ export default function WhatsAppAgentPage() {
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-black italic tracking-tighter">SabanOS <span className="text-green-500">WA</span></h2>
           <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${statusDoc?.qr ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-            {statusDoc?.status || (loading ? 'טוען...' : 'ממתין')}
+            {statusDoc?.status || (loading ? 'טוען...' : 'OFFLINE')}
           </div>
         </div>
 
         {/* Main Interface */}
-        <div className="flex flex-col items-center justify-center min-h-[280px]">
+        <div className="flex flex-col items-center justify-center min-h-[300px]">
           
           {error && (
             <div className="bg-red-500/20 p-4 rounded-2xl text-red-400 text-[10px] mb-4 w-full">
-              <strong>שגיאת חיבור:</strong> {error.message}
-              <p className="mt-1 opacity-70">בדוק שמשתני NEXT_PUBLIC ב-Vercel מוגדרים.</p>
+              <strong>שגיאת Firebase:</strong> {error.message}
             </div>
           )}
 
@@ -80,8 +78,8 @@ export default function WhatsAppAgentPage() {
                 <QRCodeSVG value={statusDoc.qr} size={220} />
               </div>
               <div className="space-y-2">
-                <p className="text-green-400 font-black text-lg animate-pulse">קוד QR מוכן!</p>
-                <p className="text-slate-400 text-xs">פתח וואטסאפ {'>'} מכשירים מקושרים {'>'} קשר מכשיר</p>
+                <p className="text-green-400 font-black text-lg animate-pulse">קוד QR מוכן לסריקה!</p>
+                <p className="text-slate-400 text-xs">פתח וואטסאפ במכשיר וסרוק את הקוד</p>
               </div>
             </div>
           ) : statusDoc?.status === 'authenticated' ? (
@@ -90,36 +88,40 @@ export default function WhatsAppAgentPage() {
                 <span className="text-5xl">✅</span>
               </div>
               <h3 className="text-xl font-bold text-green-400">הסוכן מחובר ופעיל</h3>
-              <p className="text-slate-400 text-sm">המערכת מאזינה להודעות כעת</p>
+              <p className="text-slate-400 text-sm">המערכת עובדת כעת ב-Replit</p>
             </div>
           ) : (
             <div className="text-center space-y-6 w-full">
               <div className="relative">
                 <div className="w-20 h-20 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin mx-auto"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-12 h-12 bg-green-500/10 rounded-full animate-ping"></div>
-                </div>
               </div>
-              
               <div className="space-y-4">
-                <p className="text-slate-400 font-medium">ממתין לסיגנל מהשרת ב-Replit...</p>
+                <p className="text-slate-400 font-medium">ממתין לסיגנל מ-Replit...</p>
                 
-                {/* Server Health Monitor */}
-                <div className="bg-black/30 p-4 rounded-2xl text-[11px] text-left border border-white/5">
+                {/* המלשינון המשודרג - Server Health Monitor */}
+                <div className="bg-black/30 p-4 rounded-2xl text-[11px] text-left border border-white/5 shadow-inner">
                    <p className="text-slate-500 mb-2 font-bold flex items-center">
-                     <span className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></span>
+                     <span className={`w-2 h-2 rounded-full mr-2 ${statusDoc?.lastServerPulse ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
                      SERVER MONITOR
                    </p>
                    <div className="space-y-1.5">
                      <p className="flex justify-between">
-                       <span>Firestore:</span> 
-                       <span className={db ? "text-green-500" : "text-red-500"}>{db ? "מחובר" : "שגיאת מפתחות"}</span>
+                       <span>חיבור נתונים:</span> 
+                       <span className={db ? "text-green-500" : "text-red-500"}>{db ? "תקין ✅" : "שגיאה ❌"}</span>
                      </p>
                      <p className="flex justify-between">
-                       <span>Server Pulse:</span> 
-                       {statusDoc?.lastServerPulse ? 
-                         <span className="text-green-400 font-bold">LIVE (שרת פעיל)</span> : 
-                         <span className="text-yellow-500">WAITING (ממתין לדופק)</span>}
+                       <span>סטטוס שרת:</span> 
+                       <span className="text-blue-400">{statusDoc?.status || 'מאתחל...'}</span>
+                     </p>
+                     <p className="flex justify-between border-t border-white/5 pt-1.5 mt-1.5">
+                       <span>דופק אחרון:</span> 
+                       {statusDoc?.lastServerPulse ? (
+                         <span className="text-green-400 font-mono">
+                           {new Date(statusDoc.lastServerPulse.toDate()).toLocaleTimeString()}
+                         </span>
+                       ) : (
+                         <span className="text-yellow-500 italic">מחכה ל-Replit...</span>
+                       )}
                      </p>
                    </div>
                 </div>
@@ -130,21 +132,18 @@ export default function WhatsAppAgentPage() {
 
         {/* Live Debug Log */}
         <div className="mt-8 pt-6 border-t border-white/5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Live Activity Log</p>
-            {loading && <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-ping"></div>}
-          </div>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">Activity Log</p>
           <div className="space-y-1.5 bg-black/20 p-3 rounded-xl min-h-[60px]">
             {debugLog.length > 0 ? debugLog.map((log, i) => (
-              <p key={i} className="text-[9px] font-mono text-slate-400 border-l-2 border-green-500/30 pl-2 leading-relaxed">{log}</p>
+              <p key={i} className="text-[9px] font-mono text-slate-400 border-l-2 border-green-500/30 pl-2">{log}</p>
             )) : (
-              <p className="text-[9px] font-mono text-slate-600 italic">ממתין לפעילות שרת...</p>
+              <p className="text-[9px] font-mono text-slate-600 italic">אין פעילות בדף כרגע</p>
             )}
           </div>
         </div>
 
       </div>
-      <p className="mt-6 text-slate-600 text-[10px] font-medium tracking-widest uppercase">Powered by SabanOS Infrastructure</p>
+      <p className="mt-6 text-slate-600 text-[10px] font-medium tracking-widest uppercase italic">SabanOS Control Studio</p>
     </div>
   );
 }
