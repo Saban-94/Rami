@@ -25,7 +25,7 @@ if (!admin.apps.length && serviceAccount) {
 const db = admin.firestore();
 const trialId = "NhbnQKJjZCUWdtWAIdPy"; 
 
-// 2. שרת HTTP למניעת Timeout ב-Render
+// 2. שרת HTTP מזויף כדי ש-Render יחשוב שיש כאן אתר (חובה ל-Web Service)
 const port = process.env.PORT || 10000;
 http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -34,14 +34,15 @@ http.createServer((req, res) => {
     console.log(`📡 Fake server listening on port ${port}`);
 });
 
-// 3. הגדרות WhatsApp - שים לב לתיקון הנתיב כאן
+// 3. הגדרות WhatsApp - כאן היה ה-Syntax Error, עכשיו זה נקי:
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: path.join(__dirname, '.wwebjs_auth')
     }),
     puppeteer: {
         handleSIGINT: false,
-        executablePath: path.join(process.cwd(), '.cache/puppeteer/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
+        // התיקון לנתיב ב-Render
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable',
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
