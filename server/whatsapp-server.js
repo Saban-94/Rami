@@ -35,12 +35,10 @@ http.createServer((req, res) => {
 });
 
 // 3. הגדרות WhatsApp
-const client = new Client({
-    authStrategy: new LocalAuth({
-        dataPath: path.join(__dirname, '.wwebjs_auth')
-    }),
 puppeteer: {
         handleSIGINT: false,
+        // הנתיב הסטנדרטי שבו Puppeteer מתקין בתוך התיקייה המקומית ב-Linux
+        executablePath: path.join(__dirname, '../chrome/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -48,7 +46,6 @@ puppeteer: {
             '--disable-gpu'
         ]
     }
-});
 
 async function updateFirestoreStatus(data = {}) {
     try {
