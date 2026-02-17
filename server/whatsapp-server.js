@@ -2,9 +2,9 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const admin = require('firebase-admin');
 const path = require('path');
-const http = require('http'); // הוספת שרת HTTP מזויף
+const http = require('http'); // הכרזה אחת בלבד על http
 
-// 1. אתחול Firebase מתוך משתנה הסביבה של Render
+// 1. אתחול Firebase
 let serviceAccount;
 try {
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
@@ -25,8 +25,7 @@ if (!admin.apps.length && serviceAccount) {
 const db = admin.firestore();
 const trialId = "NhbnQKJjZCUWdtWAIdPy"; 
 
-// --- שרת HTTP מזויף בשביל Render ---
-// זה מונע מה-Web Service להיכשל על "No open ports detected"
+// 2. שרת HTTP מזויף כדי ש-Render לא יכבה את השירות
 const port = process.env.PORT || 3000;
 http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -35,14 +34,14 @@ http.createServer((req, res) => {
     console.log(`📡 Fake server listening on port ${port}`);
 });
 
-// --- הגדרות WhatsApp ---
+// 3. הגדרות WhatsApp
 const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: path.join(__dirname, '.wwebjs_auth')
     }),
     puppeteer: {
         handleSIGINT: false,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || null,
+        // ב-Render אנחנו לא נועלים נתיב אלא נותנים לו למצוא את הכרום שהתקנו ב-Build
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -82,14 +81,5 @@ client.on('ready', () => {
     updateFirestoreStatus({ status: 'authenticated', qr: '' });
 });
 
+console.log("🚀 Initializing WhatsApp Client...");
 client.initialize();
-// שרת HTTP פשוט כדי להשקיט את Render
-const http = require('http');
-const port = process.env.PORT || 3000;
-
-http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('SabanOS WhatsApp Server is Online\n');
-}).listen(port, '0.0.0.0', () => {
-  console.log(`📡 Fake server listening on port ${port}`);
-});
