@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useDocumentData } from 'react-firebase-hooks/firestore';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -16,24 +16,39 @@ export default function WhatsAppAgentPage() {
     setDebugLog(prev => [`${new Date().toLocaleTimeString()}: ${msg}`, ...prev].slice(0, 5));
   };
 
-  const docRef = trialId ? doc(db, "trials", trialId, "whatsapp_agent", "status") : null;
+  // שימוש ב-useMemo כדי למנוע יצירה מחדש של ה-Reference בכל רינדור
+  // והוספת בדיקה ש-db קיים לפני שיוצרים את ה-doc
+  const docRef = useMemo(() => {
+    if (!db || !trialId) return null;
+    try {
+      return doc(db, "trials", trialId, "whatsapp_agent", "status");
+    } catch (e) {
+      console.error("Error creating docRef:", e);
+      return null;
+    }
+  }, [trialId]);
+
   const [statusDoc, loading, error] = useDocumentData(docRef);
 
   // 1. ניסיון יצירה/תיקון אוטומטי של המסמך
   useEffect(() => {
     async function initDoc() {
-      if (!loading && !statusDoc && docRef) {
-        addLog("🛠️ מסמך חסר - מנסה ליצור...");
+      // אם אין עדיין חיבור ל-DB או שהמסמך בטעינה, חכה
+      if (loading || !docRef) return;
+
+      if (!statusDoc) {
+        addLog("🛠️ מסמך חסר ב-Firestore - מנסה ליצור...");
         try {
           await setDoc(docRef, {
             status: 'initializing',
             qr: '',
-            lastServerPulse: null, // שדה לבדיקת דופק השרת
+            lastServerPulse: null,
             updatedAt: serverTimestamp()
           }, { merge: true });
-          addLog("✅ מסמך נוצר בהצלחה.");
+          addLog("✅ מסמך נוצר/סונכרן בהצלחה.");
         } catch (e: any) {
-          addLog(`❌ שגיאת הרשאות: ${e.message}`);
+          addLog(`❌ שגיאת הרשאות/חיבור: ${e.message}`);
+          console.error(e);
         }
       }
     }
@@ -48,7 +63,7 @@ export default function WhatsAppAgentPage() {
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-black italic tracking-tighter">SabanOS <span className="text-green-500">WA</span></h2>
           <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${statusDoc?.qr ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-            {statusDoc?.status || 'Offline'}
+            {statusDoc?.status || (loading ? 'Loading...' : 'Offline')}
           </div>
         </div>
 
@@ -56,7 +71,12 @@ export default function WhatsAppAgentPage() {
           {error && (
             <div className="bg-red-500/20 p-4 rounded-2xl text-red-400 text-xs mb-4 w-full">
               <strong>שגיאת Firebase:</strong> {error.message}
+              <p className="mt-2 text-[10px] opacity-70">וודא שמשתני הסביבה (Vercel Env) מוגדרים נכון.</p>
             </div>
+          )}
+
+          {!db && !loading && (
+             <div className="text-red-400 text-xs mb-4">❌ שגיאה: Firebase לא אותחל. בדוק API Keys.</div>
           )}
 
           {statusDoc?.qr ? (
@@ -70,6 +90,7 @@ export default function WhatsAppAgentPage() {
             <div className="text-center space-y-4">
               <div className="text-6xl text-green-500">✅</div>
               <h3 className="text-xl font-bold">סוכן מחובר לעבודה</h3>
+              <p className="text-slate-400 text-sm">הבוט של SabanOS פעיל</p>
             </div>
           ) : (
             <div className="text-center space-y-6 w-full">
@@ -77,13 +98,12 @@ export default function WhatsAppAgentPage() {
               <div className="space-y-2">
                 <p className="text-slate-400 font-medium">ממתין לשרת WhatsApp...</p>
                 
-                {/* מלשינון דופק שרת */}
                 <div className="bg-black/20 p-3 rounded-xl text-[10px] text-left">
                    <p className="text-slate-500 mb-1 font-bold">Server Health Check:</p>
-                   <p>• Firestore Connection: <span className="text-green-500">OK</span></p>
+                   <p>• Firestore Connection: <span className={db ? "text-green-500" : "text-red-500"}>{db ? "OK" : "Failed"}</span></p>
                    <p>• Server Pulse: {statusDoc?.lastServerPulse ? 
-                     <span className="text-green-500">Active</span> : 
-                     <span className="text-red-500">No Pulse (השרת לא מגיב)</span>}
+                     <span className="text-green-500">Active (השרת עובד)</span> : 
+                     <span className="text-red-500">No Pulse (ממתין ל-Replit...)</span>}
                    </p>
                 </div>
               </div>
