@@ -76,3 +76,12 @@ client.on('ready', () => {
 });
 
 client.initialize();
+// פתרון לבעיית ה-Port ב-Render
+const http = require('http');
+const port = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('SabanOS WhatsApp Server is Live\n');
+}).listen(port, '0.0.0.0', () => {
+  console.log(`📡 Fake web server listening on port ${port}`);
+});
