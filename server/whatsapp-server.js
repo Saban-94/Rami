@@ -83,3 +83,13 @@ client.on('ready', () => {
 });
 
 client.initialize();
+// שרת HTTP פשוט כדי להשקיט את Render
+const http = require('http');
+const port = process.env.PORT || 3000;
+
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('SabanOS WhatsApp Server is Online\n');
+}).listen(port, '0.0.0.0', () => {
+  console.log(`📡 Fake server listening on port ${port}`);
+});
