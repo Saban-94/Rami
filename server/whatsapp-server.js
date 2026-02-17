@@ -40,6 +40,7 @@ const client = new Client({
         dataPath: path.join(__dirname, '.wwebjs_auth')
     }),
     puppeteer: {
+        headless: 'shell',
         handleSIGINT: false,
         executablePath: path.join(process.cwd(), 'chrome/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
         args: [
