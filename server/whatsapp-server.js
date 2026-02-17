@@ -39,9 +39,8 @@ const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: path.join(__dirname, '.wwebjs_auth')
     }),
-    puppeteer: {
+puppeteer: {
         handleSIGINT: false,
-        // ב-Render אנחנו לא נועלים נתיב אלא נותנים לו למצוא את הכרום שהתקנו ב-Build
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
