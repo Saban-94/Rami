@@ -2,7 +2,7 @@ const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const admin = require('firebase-admin');
 const path = require('path');
-const http = require('http'); // הכרזה אחת בלבד על http
+const http = require('http');
 
 // 1. אתחול Firebase
 let serviceAccount;
@@ -25,8 +25,8 @@ if (!admin.apps.length && serviceAccount) {
 const db = admin.firestore();
 const trialId = "NhbnQKJjZCUWdtWAIdPy"; 
 
-// 2. שרת HTTP מזויף כדי ש-Render לא יכבה את השירות
-const port = process.env.PORT || 3000;
+// 2. שרת HTTP למניעת Timeout ב-Render
+const port = process.env.PORT || 10000;
 http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('SabanOS WhatsApp Server is Online\n');
@@ -34,11 +34,14 @@ http.createServer((req, res) => {
     console.log(`📡 Fake server listening on port ${port}`);
 });
 
-// 3. הגדרות WhatsApp
-puppeteer: {
+// 3. הגדרות WhatsApp - שים לב לתיקון הנתיב כאן
+const client = new Client({
+    authStrategy: new LocalAuth({
+        dataPath: path.join(__dirname, '.wwebjs_auth')
+    }),
+    puppeteer: {
         handleSIGINT: false,
-        // הנתיב הסטנדרטי שבו Puppeteer מתקין בתוך התיקייה המקומית ב-Linux
-        executablePath: path.join(__dirname, '../chrome/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
+        executablePath: path.join(process.cwd(), '.cache/puppeteer/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -46,6 +49,7 @@ puppeteer: {
             '--disable-gpu'
         ]
     }
+});
 
 async function updateFirestoreStatus(data = {}) {
     try {
@@ -64,8 +68,8 @@ async function updateFirestoreStatus(data = {}) {
     }
 }
 
-// דופק כל 30 שניות
-setInterval(() => updateFirestoreStatus(), 30000);
+// דופק כל 20 שניות
+setInterval(() => updateFirestoreStatus(), 20000);
 
 client.on('qr', (qr) => {
     console.log('🔍 QR Code Generated');
