@@ -42,9 +42,8 @@ const client = new Client({
     }),
     puppeteer: {
         handleSIGINT: false,
-        // שימוש בנתיב שהותקן ב-Build או בברירת המחדל של המערכת
         executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
-                       path.join(process.cwd(), '.cache/puppeteer/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
+                       path.join(process.cwd(), 'chrome/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
