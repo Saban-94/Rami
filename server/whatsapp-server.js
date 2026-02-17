@@ -34,9 +34,10 @@ const client = new Client({
     puppeteer: {
         handleSIGINT: false,
         args: [
-            '--no-sandbox', 
+            '--no-sandbox',
             '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage' // חשוב מאוד למניעת קריסות זכרון ב-Render
+            '--disable-dev-shm-usage',
+            '--disable-gpu'
         ]
     }
 });
