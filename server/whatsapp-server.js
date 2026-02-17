@@ -43,10 +43,15 @@ const client = new Client({
         handleSIGINT: false,
         executablePath: path.join(process.cwd(), 'chrome/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
         args: [
-            '--no-sandbox',
+'--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-gpu'
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu',
+            '--single-process',
+            '--disable-extensions'
         ]
     }
 });
