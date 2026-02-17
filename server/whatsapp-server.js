@@ -83,7 +83,20 @@ client.on('disconnected', (reason) => {
     console.log('🔌 Disconnected:', reason);
     updateFirestoreStatus({ status: 'disconnected' });
 });
-
+const client = new Client({
+    authStrategy: new LocalAuth({
+        dataPath: path.join(__dirname, '.wwebjs_auth')
+    }),
+    puppeteer: {
+        handleSIGINT: false,
+        executablePath: '/usr/bin/google-chrome-stable', // נתיב קריטי ל-Render
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage'
+        ]
+    }
+});
 // הפעלה
 client.initialize();
 
