@@ -90,4 +90,22 @@ client.on('ready', () => {
 });
 
 console.log("🚀 Initializing WhatsApp Client...");
+// --- כאן מתחיל הכיף: הבוט מקשיב להודעות ---
+client.on('message', async (msg) => {
+    const chat = await msg.getChat();
+    const user = msg.from;
+    const text = msg.body.toLowerCase();
+
+    console.log(`📩 הודעה חדשה מ-${user}: ${text}`);
+
+    // דוגמה לבוט פשוט: מגיב למילת מפתח
+    if (text === 'שלום' || text === 'היי') {
+        await client.sendMessage(user, 'היי! ברוך הבא ל-SabanOS. איך אני יכול לעזור לך היום? 🎨');
+    }
+
+    // בוט "מידע"
+    if (text === 'שעות' || text === 'שעות פעילות') {
+        await client.sendMessage(user, 'אנחנו פתוחים בימים א-ה בין 09:00 ל-18:00. נשמח לראותך!');
+    }
+});
 client.initialize();
