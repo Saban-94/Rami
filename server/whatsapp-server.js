@@ -40,18 +40,19 @@ const client = new Client({
     authStrategy: new LocalAuth({
         dataPath: path.join(__dirname, '.wwebjs_auth')
     }),
-    puppeteer: {
+puppeteer: {
         handleSIGINT: false,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || 
-                       path.join(process.cwd(), 'chrome/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
+        executablePath: 
+            process.env.PUPPETEER_EXECUTABLE_PATH || 
+            path.join(process.cwd(), 'chrome/chrome/linux-145.0.7632.67/chrome-linux64/chrome') ||
+            path.join(process.cwd(), 'server/chrome/chrome/linux-145.0.7632.67/chrome-linux64/chrome'),
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
             '--disable-gpu'
         ]
-    }
-});
+    };
 
 // פונקציה לעדכון הסטטוס וה"דופק" (הלב של המלשינון)
 async function updateFirestoreStatus(data = {}) {
