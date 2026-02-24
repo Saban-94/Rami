@@ -1,5 +1,10 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, initializeFirestore, browserLocalPersistence, browserSessionPersistence } from "firebase/firestore";
+import { 
+  initializeFirestore, 
+  getFirestore, 
+  connectFirestoreEmulator,
+  terminate
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -12,13 +17,21 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// אתחול האפליקציה (Singleton)
+// 1. אתחול האפליקציה (Singleton)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// אתחול Firestore עם הגדרה שמונעת שימוש ב-Constructors בעייתיים בשרת
-const db = getFirestore(app);
+// 2. פתרון שגיאת Illegal constructor:
+// אנחנו מאתחלים את Firestore עם הגדרה שמכריחה אותו להשתמש ב-HTTP רגיל (Long Polling)
+// במקום WebChannels/WebSockets שגורמים לקריסה ב-Next.js
+let db;
+if (typeof window !== "undefined") {
+  db = initializeFirestore(app, {
+    experimentalForceLongPolling: true, // זה המפתח לפתרון!
+  });
+} else {
+  db = getFirestore(app);
+}
 
-// אתחול Auth
 const auth = getAuth(app);
 
 export { app, db, auth };
