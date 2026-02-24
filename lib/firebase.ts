@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, initializeFirestore, persistentLocalCache, _debugAssert } from "firebase/firestore";
+import { getFirestore, initializeFirestore, browserLocalPersistence, browserSessionPersistence } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -12,19 +12,13 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// אתחול האפליקציה
+// אתחול האפליקציה (Singleton)
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// פתרון השגיאה: אתחול Firestore עם הגדרות ספציפיות שמונעות בעיות ב-SSR
+// אתחול Firestore עם הגדרה שמונעת שימוש ב-Constructors בעייתיים בשרת
 const db = getFirestore(app);
 
-// אופציונלי: אם השגיאה נמשכת, השתמש ב-initializeFirestore במקום getFirestore:
-/*
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache() 
-});
-*/
-
+// אתחול Auth
 const auth = getAuth(app);
 
 export { app, db, auth };
