@@ -5,18 +5,16 @@ import { GoogleGenAI } from "@google/genai";
 export async function processBusinessRequest(message: string, history: any[], businessContext: any) {
   const apiKey = process.env.GEMINI_API_KEY;
 
-  // מלשינון 1: בדיקת מפתח בשרת
-  if (!apiKey) {
-    return "❌ שגיאה: GEMINI_API_KEY לא נמצא ב-Environment Variables של Vercel.";
-  }
+  if (!apiKey) return "❌ חסר API KEY";
 
   try {
     const ai = new GoogleGenAI({ apiKey });
-    const modelId = "gemini-3.1-pro-preview";
+    
+    // שינוי למודל Flash - הרבה יותר זמין ופחות נוטה ל-429
+    const modelId = "gemini-1.5-flash"; 
 
-    // מלשינון 2: בדיקת מבנה ההיסטוריה
     const cleanHistory = (history || [])
-      .slice(-10)
+      .slice(-6) // צמצום ההיסטוריה ל-6 הודעות כדי לחסוך ב-Tokens
       .map(h => ({
         role: h.role === "user" ? "user" : "model",
         parts: [{ text: String(h.content || "") }]
@@ -34,25 +32,16 @@ export async function processBusinessRequest(message: string, history: any[], bu
         { role: "user", parts: [{ text: message }] }
       ],
       config: {
-        systemInstruction: `אתה עוזר מקצועי של ${businessContext?.businessName || 'אבו אל ראסם'}.`,
+        systemInstruction: `אתה עוזר של ${businessContext?.businessName || 'אבו אל ראסם'}. ענה בקצרה.`,
       }
     });
-
-    if (!result || !result.text) {
-      return "⚠️ שגיאה: ה-API החזיר תשובה ריקה. ייתכן שיש חסימת תוכן (Safety Filters).";
-    }
 
     return result.text;
 
   } catch (error: any) {
-    console.error("Detailed Server Error:", error);
-    
-    // מלשינון 3: פירוט השגיאה מה-SDK של גוגל
-    const errorMsg = error.message || "";
-    if (errorMsg.includes("400")) return `❌ שגיאה 400: מפתח API לא תקין או מודל לא זמין. (${modelId})`;
-    if (errorMsg.includes("429")) return "❌ שגיאה 429: הגעת למכסת ההודעות (Quota) של גוגל.";
-    if (errorMsg.includes("500")) return "❌ שגיאה 500: תקלה בשרתים של גוגל.";
-    
-    return `❌ כשל פנימי: ${error.message}`;
+    if (error.message?.includes("429")) {
+      return "⚠️ גוגל הגבילו את כמות ההודעות לרגע. נסה שוב בעוד דקה.";
+    }
+    return `❌ שגיאה: ${error.message}`;
   }
 }
