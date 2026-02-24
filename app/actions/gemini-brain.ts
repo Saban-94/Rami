@@ -2,42 +2,45 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// וודא שהמפתח הזה מוגדר ב-Vercel!
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 export async function processBusinessRequest(message: string, history: any[], businessContext: any) {
   try {
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("Missing Gemini API Key in Environment Variables");
+      return "שגיאת תצורה: חסר מפתח API.";
+    }
+
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const systemPrompt = `
-      You are the SabanOS Business Assistant. 
-      Business Name: ${businessContext?.name || 'SabanOS'}
-      Industry: ${businessContext?.industry || 'Automation'}
-      Instructions: Reply in Hebrew. Be professional, friendly, and concise. 
-      Use the chat history provided to maintain context.
-    `;
+    // ניקוי היסטוריה - קריטי למניעת שגיאות 400
+    const cleanHistory = (history || []).map(h => ({
+      role: h.role === "user" ? "user" : "model",
+      parts: [{ text: String(h.content || h.parts?.[0]?.text || "") }]
+    })).filter(h => h.parts[0].text.trim() !== "");
 
     const chat = model.startChat({
-      history: history || [],
-      generationConfig: { maxOutputTokens: 800 },
+      history: cleanHistory,
     });
 
-    const result = await chat.sendMessage(`${systemPrompt}\n\nUser Message: ${message}`);
-    return result.response.text();
-  } catch (error) {
-    console.error("Gemini Brain Error:", error);
-    return "מצטער, הייתה לי שגיאה קטנה בחיבור. אפשר לנסות שוב?";
-  }
-}
+    // יצירת הקשר עסקי חזק
+    const systemPrompt = `
+      אתה העוזר האישי של חברת "${businessContext?.businessName || businessContext?.name || 'הובלות אבו אל ראסם'}".
+      תחום פעילות: ${businessContext?.industry || 'הובלות ולוגיסטיקה'}.
+      ענה בעברית טבעית, אדיבה ומקצועית. 
+      אם שואלים על מחיר, בקש פרטים על הקומות, מעלית ותכולה.
+    `;
 
-export async function suggestDesignFromPrompt({ prompt }: { prompt: string }) {
-  try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const systemPrompt = `You are a Business Architect. Return ONLY a valid JSON object.`;
-    const result = await model.generateContent(`${systemPrompt}\n\nUser request: ${prompt}`);
-    const cleanJson = result.response.text().replace(/```json|```/g, "").trim();
-    return JSON.parse(cleanJson);
-  } catch (error) {
-    console.error("Gemini Design Error:", error);
-    return { error: "Failed to generate design" };
+    const result = await chat.sendMessage(`${systemPrompt}\n\nהודעת משתמש: ${message}`);
+    const response = await result.response;
+    const text = response.text();
+    
+    return text;
+
+  } catch (error: any) {
+    console.error("Detailed Gemini Error:", error.message || error);
+    // החזרת הודעה מפורטת יותר ללוגים
+    return null; 
   }
 }
