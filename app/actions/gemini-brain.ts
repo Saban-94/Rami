@@ -1,46 +1,76 @@
 "use server";
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 
-// וודא שהמפתח הזה מוגדר ב-Vercel!
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+// אתחול הלקוח עם ה-API KEY מה-Vercel
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY || ""
+});
 
 export async function processBusinessRequest(message: string, history: any[], businessContext: any) {
   try {
     if (!process.env.GEMINI_API_KEY) {
-      console.error("Missing Gemini API Key in Environment Variables");
-      return "שגיאת תצורה: חסר מפתח API.";
+      console.error("Missing GEMINI_API_KEY");
+      return "שגיאת מערכת: מפתח ה-API לא מוגדר.";
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // שימוש במודל 3.1 Pro החדש ביותר לביצועים מקסימליים
+    const modelId = "gemini-3.1-pro-preview";
 
-    // ניקוי היסטוריה - קריטי למניעת שגיאות 400
-    const cleanHistory = (history || []).map(h => ({
-      role: h.role === "user" ? "user" : "model",
-      parts: [{ text: String(h.content || h.parts?.[0]?.text || "") }]
-    })).filter(h => h.parts[0].text.trim() !== "");
+    // ניקוי ובניית ההיסטוריה לפי הפרוטוקול החדש של Gemini 3
+    // חייב להתחיל ב-'user' ולהיות במבנה של parts
+    let cleanHistory = (history || [])
+      .map(h => ({
+        role: h.role === "user" ? "user" : "model",
+        parts: [{ text: String(h.content || h.parts?.[0]?.text || "") }]
+      }))
+      .filter(h => h.parts[0].text.trim() !== "");
 
-    const chat = model.startChat({
-      history: cleanHistory,
-    });
+    // תיקון: אם ההודעה הראשונה היא של המודל, נסיר אותה (גימני דורש להתחיל ב-user)
+    if (cleanHistory.length > 0 && cleanHistory[0].role === "model") {
+      cleanHistory.shift();
+    }
 
-    // יצירת הקשר עסקי חזק
     const systemPrompt = `
-      אתה העוזר האישי של חברת "${businessContext?.businessName || businessContext?.name || 'הובלות אבו אל ראסם'}".
-      תחום פעילות: ${businessContext?.industry || 'הובלות ולוגיסטיקה'}.
-      ענה בעברית טבעית, אדיבה ומקצועית. 
-      אם שואלים על מחיר, בקש פרטים על הקומות, מעלית ותכולה.
+      אתה עוזר AI מקצועי של "${businessContext?.businessName || 'הובלות אבו אל ראסם'}".
+      תחום: ${businessContext?.industry || 'לוגיסטיקה והובלות'}.
+      
+      הנחיות:
+      1. ענה בעברית טבעית וזורמת.
+      2. אם לקוח מבקש הצעת מחיר, שאל על: תכולה, קומות, מעלית, ומיקום (מאיפה לאיפה).
+      3. היה אדיב מאוד - אתה הפנים של העסק.
     `;
 
-    const result = await chat.sendMessage(`${systemPrompt}\n\nהודעת משתמש: ${message}`);
-    const response = await result.response;
-    const text = response.text();
-    
-    return text;
+    // הפעלת הצ'אט עם הגדרות "חשיבה" (Thinking)
+    const response = await ai.models.generateContent({
+      model: modelId,
+      contents: [
+        ...cleanHistory,
+        { role: "user", parts: [{ text: `${systemPrompt}\n\nהודעת לקוח: ${message}` }] }
+      ],
+      config: {
+        // רמת חשיבה - LOW מתאים לצ'אט מהיר, MEDIUM למשימות תמחור מורכבות
+        thinkingConfig: {
+          includeThoughts: true,
+          thinkingLevel: "low" 
+        }
+      }
+    });
+
+    return response.text;
 
   } catch (error: any) {
-    console.error("Detailed Gemini Error:", error.message || error);
-    // החזרת הודעה מפורטת יותר ללוגים
-    return null; 
+    console.error("Gemini 3.1 Critical Error:", error.message);
+    
+    // Fallback למודל Flash המהיר במידה ו-Pro עמוס
+    try {
+      const flashResponse = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [{ role: "user", parts: [{ text: message }] }]
+      });
+      return flashResponse.text;
+    } catch (e) {
+      return "מצטער, יש לי עומס קטן על הקו. תוכל לנסות שוב בעוד רגע? 🚛";
+    }
   }
 }
