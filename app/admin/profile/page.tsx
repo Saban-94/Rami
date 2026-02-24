@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Camera, Save, UploadCloud, CheckCircle2 } from "lucide-react";
-import { uploadProfileImage } from "@/app/actions/drive-actions"; // הסקריפט שבנינו
+import { someAction } from '../actions/drive-actions'; // שימוש בנתיב יחסי הוא הכי בטוח ב-Build
 
 export default function AdminProfile() {
   const [preview, setPreview] = useState<string | null>(null);
