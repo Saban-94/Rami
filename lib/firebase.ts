@@ -1,10 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { 
-  getFirestore, 
-  initializeFirestore, 
-  memoryLocalCache,
-  indexedDbLocalCache
-} from "firebase/firestore";
+import { initializeFirestore, memoryLocalCache } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -16,18 +11,14 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Singleton App
+// Singleton App initialization
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-/**
- * פתרון שגיאת Illegal constructor:
- * אנחנו מכריחים את Firestore לעבוד בלי ה-WebChannel המורכב שגורם לקריסה
- */
+// פתרון סופי לשגיאות Constructor ב-Next.js:
+// אנחנו משתמשים ב-Long Polling ובזיכרון מקומי בלבד כדי למנוע שימוש ב-MessagePort
 const db = initializeFirestore(app, {
-  // השורה הזו מונעת מ-Firestore לנסות לפתוח ערוצי תקשורת מורכבים ב-Next.js
-  experimentalForceLongPolling: true, 
-  // אנחנו מגדירים זיכרון מקומי פשוט במקום סנכרון טאבים מורכב
-  localCache: memoryLocalCache() 
+  localCache: memoryLocalCache(),
+  experimentalForceLongPolling: true 
 });
 
 const auth = getAuth(app);
