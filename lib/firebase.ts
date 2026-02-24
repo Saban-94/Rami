@@ -1,6 +1,5 @@
-// lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, _debugAssert } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -13,10 +12,19 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
-// אתחול Singleton שזמין תמיד
+// אתחול האפליקציה
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// ייצוא ישיר - השרת יוכל להשתמש בהם בזמן ה-Build
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-export { app };
+// פתרון השגיאה: אתחול Firestore עם הגדרות ספציפיות שמונעות בעיות ב-SSR
+const db = getFirestore(app);
+
+// אופציונלי: אם השגיאה נמשכת, השתמש ב-initializeFirestore במקום getFirestore:
+/*
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache() 
+});
+*/
+
+const auth = getAuth(app);
+
+export { app, db, auth };
