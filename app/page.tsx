@@ -3,142 +3,198 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Rocket, Zap, Star, HeartPulse, Truck, Map, 
-  Moon, Sun, Activity, Sparkles, ClipboardCheck, Phone
+  Truck, HeartPulse, Scissors, Star, 
+  MapPin, Clock, ShieldCheck, Sparkles,
+  ChevronRight, Calendar, Smartphone
 } from "lucide-react";
 import Link from "next/link";
+import Navigation from "../components/Navigation";
+import ContactSection from "../components/ContactSection";
 
-import Navigation from "@/components/Navigation";
-import ContactSection from "@/components/ContactSection";
-
-const SAMPLES = [
-  {
-    type: "Logistics",
-    brand: "הובלות אבו ראסם",
-    color: "#3B82F6", // Blue
-    icon: <Truck size={20} className="text-blue-500" />,
-    events: ["הובלה לטייבה - 09:00", "דירת 3 חדרים - 13:00"],
-    special: "חישוב מסלול AI פעיל 🚛"
+// מאגר העסקים לסימולטור ה"זיקית"
+const BUSINESS_MODES = {
+  moving: {
+    id: "moving",
+    title: "הובלות אבו אל ראסם",
+    subtitle: "ניהול לוגיסטי חכם",
+    color: "bg-blue-600",
+    text: "text-blue-500",
+    icon: <Truck className="text-white" size={24} />,
+    mockupContent: (
+      <div className="space-y-4">
+        <div className="bg-blue-500/10 p-4 rounded-2xl border border-blue-500/20">
+          <p className="text-[10px] font-bold text-blue-500 uppercase">הצעת מחיר AI</p>
+          <p className="text-lg font-black italic text-white">₪1,075.00</p>
+        </div>
+        <div className="bg-white/5 p-3 rounded-xl border border-white/10 flex items-center justify-between">
+          <span className="text-[10px] text-white">משאית בדרך לטייבה</span>
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
+        </div>
+        <button className="w-full py-3 bg-blue-600 rounded-xl text-[10px] font-black uppercase italic">עקוב אחרי ההובלה</button>
+      </div>
+    )
   },
-  {
-    type: "Clinic",
-    brand: "DentalCare Pro",
-    color: "#10B981", // Green
-    icon: <HeartPulse size={20} className="text-emerald-500" />,
-    events: ["הלבנה - 08:15", "טיפול שורש - 10:30"],
-    special: "סנכרון תורים אוטומטי 🦷"
+  dental: {
+    id: "dental",
+    title: "Dr. Moshe Dental",
+    subtitle: "מרפאת שיניים מתקדמת",
+    color: "bg-emerald-500",
+    text: "text-emerald-500",
+    icon: <HeartPulse className="text-white" size={24} />,
+    mockupContent: (
+      <div className="space-y-4">
+        <div className="bg-emerald-500/10 p-4 rounded-2xl border border-emerald-500/20">
+          <p className="text-[10px] font-bold text-emerald-500 uppercase">תור קרוב</p>
+          <p className="text-lg font-black italic text-white">היום, 16:30</p>
+        </div>
+        <div className="space-y-2">
+          <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-[10px] text-white">ניקוי אבנית - 150₪</div>
+          <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-[10px] text-white">הלבנה - 800₪</div>
+        </div>
+        <button className="w-full py-3 bg-emerald-500 rounded-xl text-[10px] font-black uppercase italic">קבע תור מהיר</button>
+      </div>
+    )
+  },
+  beauty: {
+    id: "beauty",
+    title: "רויטל קוסמטיקה",
+    subtitle: "יופי וטיפוח מבוסס AI",
+    color: "bg-pink-500",
+    text: "text-pink-500",
+    icon: <Scissors className="text-white" size={24} />,
+    mockupContent: (
+      <div className="space-y-4">
+        <div className="bg-pink-500/10 p-4 rounded-2xl border border-pink-500/20 text-right">
+          <p className="text-[10px] font-bold text-pink-500 uppercase">היומן שלך מסודר</p>
+          <p className="text-[11px] font-medium text-white/80">3 לקוחות מחכות היום</p>
+        </div>
+        <div className="flex gap-2">
+          <div className="flex-1 bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+            <p className="text-[12px] font-bold text-white">9:00</p>
+            <p className="text-[8px] text-pink-400">פדיקור</p>
+          </div>
+          <div className="flex-1 bg-white/5 p-3 rounded-xl border border-white/10 text-center">
+            <p className="text-[12px] font-bold text-white">11:30</p>
+            <p className="text-[8px] text-pink-400">לק ג'ל</p>
+          </div>
+        </div>
+        <button className="w-full py-3 bg-pink-500 rounded-xl text-[10px] font-black uppercase italic">פתח יומן AI</button>
+      </div>
+    )
   }
+};
+
+const REVIEWS = [
+  { name: "אבי מ.", text: "המעבר הכי מהיר שהיה לי! אבו ראסם מקצוען, המעקב החי נתן לי שקט נפשי.", stars: 5, type: "moving" },
+  { name: "ליטל ד.", text: "קבעתי תור לדר' משה דרך האתר, הכל היה פשוט וקליל. אני מחייכת ונהנית מהתוצאה!", stars: 5, type: "dental" },
+  { name: "רויטל הקוסמטיקאית", text: "ה-AI סידר לי את היומן בצורה מושלמת. כבר לא צריכה להתעסק עם הודעות וואטסאפ כל היום.", stars: 5, type: "beauty" }
 ];
 
 export default function HomePage() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const [activeIdx, setActiveIdx] = useState(0);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveIdx((prev) => (prev + 1) % SAMPLES.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const themeClass = isDarkMode ? "bg-[#020510] text-white" : "bg-slate-50 text-slate-900";
+  const [mode, setMode] = useState(BUSINESS_MODES.moving);
 
   return (
-    <div className={`min-h-screen transition-colors duration-700 ${themeClass}`} dir="rtl">
+    <div className="min-h-screen bg-[#020510] text-white font-sans overflow-x-hidden" dir="rtl">
       <Navigation />
-      
-      <button 
-        onClick={() => setIsDarkMode(!isDarkMode)}
-        className="fixed bottom-10 left-10 z-[100] p-4 rounded-full bg-blue-600 text-white shadow-2xl"
-      >
-        {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
-      </button>
 
-      <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
-        <div className="flex-1 space-y-8 text-right">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 text-blue-500 text-[10px] font-black uppercase border border-blue-500/20">
-            <Sparkles size={14} /> SabanOS Enterprise v3.0
-          </div>
+      <main className="max-w-7xl mx-auto px-6 pt-32 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           
-          <h1 className="text-6xl md:text-[80px] font-black leading-[0.9] italic tracking-tighter">
-            הובלות ועסקים <br /> <span className="text-blue-600">באוטומט מלא.</span>
-          </h1>
-          
-          <div className="space-y-4 max-w-xl">
-            <p className="text-xl opacity-70 italic font-medium leading-relaxed">
-              תן ל-AI לבנות לך הצעות מחיר אוטומטיות, לחשב מסלול לכל הובלה, ולנהל את המעברים במקומך.
+          {/* צד שיווקי */}
+          <div className="space-y-8 text-right">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest">
+              <Sparkles size={14} /> Rami-IT Systems v3.0
+            </motion.div>
+            
+            <h1 className="text-6xl md:text-[85px] font-black leading-[0.9] italic tracking-tighter">
+              העסק שלך <br /> <span className={mode.text}>באוטומט מלא.</span>
+            </h1>
+
+            <p className="text-xl text-slate-400 max-w-lg leading-relaxed font-medium italic">
+              תן ל-AI לבנות לך הצעות מחיר, לחשב מסלולי הובלה, ולסדר לך את היומן במקומך. הכל באפליקציה אחת ממותגת.
             </p>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Link href="/trial/bL8blHgaXlwfp88qLhFO" className="inline-flex items-center justify-center px-10 py-5 bg-blue-600 text-white font-black rounded-[2rem] text-xl shadow-2xl hover:scale-105 transition-all">
-              צור אפליקציה לעסק שלך עוד היום
-            </Link>
-          </div>
-        </div>
 
-        {/* Mockup iPhone Simulation */}
-        <div className="flex-1 relative flex justify-center">
-          <div className={`relative border-[10px] rounded-[3.5rem] h-[620px] w-[300px] shadow-[0_0_60px_rgba(59,130,246,0.15)] overflow-hidden ${isDarkMode ? 'border-slate-800 bg-black' : 'border-slate-200 bg-white'}`}>
-             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-slate-800 rounded-b-2xl z-50" />
-             
-             <AnimatePresence mode="wait">
+            {/* כפתורי בחירת עסק (זיקית) */}
+            <div className="flex flex-wrap gap-4 pt-4">
+              <button onClick={() => setMode(BUSINESS_MODES.moving)} className={`px-6 py-3 rounded-2xl flex items-center gap-2 font-black transition-all ${mode.id === 'moving' ? 'bg-blue-600 scale-105 shadow-lg shadow-blue-500/20' : 'bg-white/5 border border-white/10 hover:bg-white/10'}`}>
+                <Truck size={18} /> הובלות
+              </button>
+              <button onClick={() => setMode(BUSINESS_MODES.dental)} className={`px-6 py-3 rounded-2xl flex items-center gap-2 font-black transition-all ${mode.id === 'dental' ? 'bg-emerald-600 scale-105 shadow-lg shadow-emerald-500/20' : 'bg-white/5 border border-white/10 hover:bg-white/10'}`}>
+                <HeartPulse size={18} /> מרפאת שיניים
+              </button>
+              <button onClick={() => setMode(BUSINESS_MODES.beauty)} className={`px-6 py-3 rounded-2xl flex items-center gap-2 font-black transition-all ${mode.id === 'beauty' ? 'bg-pink-600 scale-105 shadow-lg shadow-pink-500/20' : 'bg-white/5 border border-white/10 hover:bg-white/10'}`}>
+                <Scissors size={18} /> קוסמטיקה
+              </button>
+            </div>
+
+            <div className="pt-8">
+              <Link href="/create-business" className="inline-flex items-center gap-4 px-10 py-5 bg-white text-black font-black rounded-[2rem] text-xl shadow-2xl hover:scale-105 transition-all">
+                צור אפליקציה לעסק שלך עוד היום <ChevronRight />
+              </Link>
+            </div>
+          </div>
+
+          {/* iPhone Simulator דינמי */}
+          <div className="relative flex justify-center py-10">
+            <div className="relative border-[12px] border-slate-900 rounded-[3.5rem] h-[640px] w-[310px] bg-black shadow-2xl overflow-hidden shadow-blue-500/10">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-slate-900 rounded-b-3xl z-50" />
+              
+              <AnimatePresence mode="wait">
                 <motion.div 
-                  key={activeIdx}
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  key={mode.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 1.05 }}
-                  className="p-5 pt-10 h-full flex flex-col"
+                  exit={{ opacity: 0, scale: 1.1 }}
+                  transition={{ duration: 0.4 }}
+                  className="h-full flex flex-col p-6"
                 >
-                  {/* Brand Header */}
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                      <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center border border-white/10">
-                        {SAMPLES[activeIdx].icon}
+                  <div className="flex items-center justify-between mb-8 mt-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg ${mode.color}`}>
+                        {mode.icon}
                       </div>
-                      <span className="text-xs font-black uppercase italic tracking-tighter">{SAMPLES[activeIdx].brand}</span>
+                      <div className="text-right">
+                        <p className="text-[11px] font-black text-white italic">{mode.title}</p>
+                        <p className="text-[8px] text-white/40 font-bold uppercase tracking-tighter">{mode.subtitle}</p>
+                      </div>
                     </div>
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-ping" />
                   </div>
-
-                  {/* Order / Lead Simulation */}
-                  <div className="bg-blue-600/10 border border-blue-500/20 p-4 rounded-2xl mb-4">
-                    <p className="text-[10px] font-bold text-blue-500 uppercase">הצעת מחיר AI אחרונה</p>
-                    <p className="text-lg font-black italic">₪1,075.00</p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-bold opacity-40 uppercase">לו"ז פעיל להיום</p>
-                    {SAMPLES[activeIdx].events.map((e, i) => (
-                      <div key={i} className={`p-4 rounded-xl border flex flex-col gap-1 ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
-                        <p className="text-xs font-black">{e}</p>
-                        <div className="flex items-center gap-1 opacity-40">
-                          <ClipboardCheck size={10} />
-                          <span className="text-[9px] italic">נאשר ונשלח לינק מעקב</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-auto bg-green-500/10 border border-green-500/20 p-3 rounded-xl flex items-center gap-2">
-                    <Zap size={14} className="text-green-500" />
-                    <span className="text-[9px] font-black text-green-500 uppercase tracking-widest">{SAMPLES[activeIdx].special}</span>
+                  {mode.mockupContent}
+                  <div className="mt-auto space-y-3">
+                    <div className="h-1 w-20 bg-white/10 rounded-full mx-auto" />
+                    <p className="text-center text-[8px] text-white/20 font-bold tracking-widest uppercase">Powered by SabanOS</p>
                   </div>
                 </motion.div>
-             </AnimatePresence>
+              </AnimatePresence>
+            </div>
           </div>
-          
-          {/* Floating Element: Live Map Info */}
-          <motion.div 
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="absolute -right-10 top-1/2 bg-white text-slate-900 p-4 rounded-2xl shadow-2xl border border-slate-100 hidden md:block"
-          >
-            <Map className="text-blue-600 mb-1" size={24} />
-            <p className="text-[10px] font-black italic text-nowrap">ציר הובלה בזמן אמת</p>
-          </motion.div>
         </div>
-      </section>
+
+        {/* סקשן ביקורות (גוגל סטייל) */}
+        <section className="mt-40">
+          <h3 className="text-center text-3xl font-black mb-12 italic">מה אומרים עלינו בגוגל? ⭐⭐⭐⭐⭐</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {REVIEWS.map((rev, i) => (
+              <motion.div 
+                whileHover={{ y: -10 }}
+                key={i} 
+                className="bg-white/5 border border-white/10 p-8 rounded-[2.5rem] space-y-4"
+              >
+                <div className="flex gap-1 text-amber-500">
+                  {[...Array(rev.stars)].map((_, s) => <Star key={s} size={16} fill="currentColor" />)}
+                </div>
+                <p className="text-lg font-bold italic leading-relaxed">"{rev.text}"</p>
+                <div className="flex items-center gap-3 border-t border-white/10 pt-4">
+                  <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-black text-xs">
+                    {rev.name[0]}
+                  </div>
+                  <p className="text-sm font-black opacity-60 italic">{rev.name}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+      </main>
 
       <ContactSection />
     </div>
