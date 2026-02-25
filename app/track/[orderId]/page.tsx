@@ -1,140 +1,205 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Truck, Package, Home, MapPin, Star, Phone, CheckCircle2 } from "lucide-react";
+import { Truck, Package, Home, MapPin, Star, Phone, CheckCircle2, ChevronRight, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function OrderTrackingPage({ params }: { params: { orderId: string } }) {
-  // בשימוש אמיתי נמשוך את הנתונים מה-Firebase לפי ה-orderId
+export default function LiveTrackingPage({ params }: { params: { orderId: string } }) {
+  // סימולציה של מצב השלבים - במציאות יגיע מה-DB
   const [step, setStep] = useState(1);
-  const [orderData, setOrderData] = useState({
-    customerName: "ראמי",
-    origin: "טייבה, קומה 3",
-    destination: "תל אביב, קומה 2",
-    items: [
-      { name: "ספה 2 מטר", qty: 3, floorPrice: 15 },
-      { name: "מקרר", qty: 1, floorPrice: 15, extra: 50 }
-    ],
-    basePrice: 450,
-  });
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // חישוב מחיר דינמי לפי הלוגיקה שקבעת
-  const floorSurcharge = orderData.items.reduce((acc, item) => acc + (item.qty * item.floorPrice), 0);
-  const totalWeightPrice = orderData.basePrice + floorSurcharge + 50; // +50 על פירוק מקרר
+  useEffect(() => {
+    setIsLoaded(true);
+  }, []);
+
+  const orderData = {
+    customerName: "ראמי",
+    businessName: "הובלות אבו אל ראסם",
+    basePrice: 450,
+    extras: [
+      { label: "הורדה קומה 3 (ללא מעלית)", amount: 60 }, // 15₪ * 4 פריטים
+      { label: "פירוק מקרר מקצועי", amount: 50 },
+    ],
+    total: 560
+  };
 
   const steps = [
-    { id: 1, label: "אריזה והכנה", icon: <Package size={20} />, detail: "הצוות אורז את הציוד בניילון נצמד ושומר על הפינות." },
-    { id: 2, label: "הורדה מקומה 3", icon: <Home size={20} />, detail: `חיוב קומות: ${floorSurcharge}₪ התווספו למאמץ.` },
-    { id: 3, label: "הובלה בדרך", icon: <Truck size={20} />, detail: "המשאית בנסיעה לכתובת היעד. המטען מבוטח." },
-    { id: 4, label: "פריקה בקומה 2", icon: <MapPin size={20} />, detail: "העלאת הציוד למקום החדש בזהירות." },
-    { id: 5, label: "סיום ודירוג", icon: <CheckCircle2 size={20} />, detail: "הובלה הושלמה בהצלחה! תתחדשו!" },
+    { id: 1, label: "אריזה והכנה", detail: "אריזת ציוד ומיגון בקרטון וניילון נצמד", icon: <Package size={20} /> },
+    { id: 2, label: "הורדה למשאית", detail: "הורדה מקומה 3 ללא מעלית (חיוב לפי 15₪ לפריט)", icon: <Home size={20} /> },
+    { id: 3, label: "בהובלה כעת", detail: "המשאית בנסיעה מטייבה לתל אביב", icon: <Truck size={20} /> },
+    { id: 4, label: "פריקה ביעד", detail: "העלאת הציוד לקומה 2 עם מעלית", icon: <MapPin size={20} /> },
+    { id: 5, label: "סיום וחיוך", detail: "אישור סופי ודירוג השירות", icon: <CheckCircle2 size={20} /> },
   ];
 
+  if (!isLoaded) return null;
+
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-100 font-sans p-4 md:p-8 overflow-hidden" dir="rtl">
-      {/* Background Neon Glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_50%_20%,_#1e3a8a_0%,_transparent_50%)] opacity-30 pointer-events-none" />
+    <div className="min-h-screen bg-[#020617] text-slate-100 font-sans p-4 md:p-8 relative overflow-hidden" dir="rtl">
+      {/* אפקט ניאון רקע */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-blue-600/10 blur-[120px] pointer-events-none" />
 
       <div className="max-w-2xl mx-auto relative z-10">
-        {/* Header */}
-        <header className="mb-10 text-center">
-          <h1 className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-l from-blue-400 to-white">
-            SabanOS Live Tracker
-          </h1>
-          <p className="text-slate-400 mt-2 italic">שלום {orderData.customerName}, הציוד שלך בידיים של אבו ראסם 🚛</p>
+        {/* כותרת עליונה */}
+        <header className="flex justify-between items-center mb-8 bg-slate-900/40 p-5 rounded-3xl border border-white/5 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.4)]">
+              <Truck className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-black leading-none">{orderData.businessName}</h1>
+              <p className="text-blue-400 text-[10px] mt-1 flex items-center gap-1">
+                <Zap size={10} fill="currentColor" /> מעקב הובלה חי
+              </p>
+            </div>
+          </div>
+          <div className="text-left text-xs text-slate-500">
+            ID: {params.orderId || "AB-99"}
+          </div>
         </header>
 
-        {/* Live Progress Bar (The Neon Line) */}
-        <div className="bg-slate-900/50 border border-white/10 p-8 rounded-[2.5rem] shadow-2xl backdrop-blur-xl mb-8">
-          <div className="relative h-4 w-full bg-slate-800 rounded-full mb-12 overflow-hidden border border-white/5">
+        {/* כרטיס סטטוס מרכזי */}
+        <main className="bg-slate-900/60 border border-white/10 rounded-[2.5rem] p-6 shadow-2xl backdrop-blur-xl mb-6">
+          
+          {/* פס הניאון המפורסם */}
+          <div className="relative h-3 w-full bg-slate-800 rounded-full mb-10 border border-white/5 p-[2px]">
             <motion.div 
               initial={{ width: 0 }}
               animate={{ width: `${(step / 5) * 100}%` }}
-              className="absolute h-full bg-blue-500 shadow-[0_0_20px_#3b82f6,0_0_10px_#fff]"
+              className="h-full bg-gradient-to-l from-blue-400 to-blue-600 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.8),0_0_5px_#fff]"
             />
           </div>
 
-          {/* Steps List */}
-          <div className="space-y-6">
+          {/* רשימת השלבים */}
+          <div className="space-y-8 relative">
+            {/* קו מחבר אחורי */}
+            <div className="absolute right-5 top-2 bottom-2 w-[2px] bg-slate-800" />
+
             {steps.map((s) => (
               <motion.div 
                 key={s.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: step >= s.id ? 1 : 0.4, x: 0 }}
-                className={`flex gap-4 p-4 rounded-2xl transition-all ${step === s.id ? 'bg-blue-600/20 border border-blue-500/30' : ''}`}
+                initial={{ opacity: 0.3 }}
+                animate={{ opacity: step >= s.id ? 1 : 0.3 }}
+                className="relative flex gap-5 pr-1"
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${step >= s.id ? 'bg-blue-500 text-white shadow-[0_0_15px_#3b82f6]' : 'bg-slate-800 text-slate-500'}`}>
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center z-10 transition-all duration-500 ${
+                  step >= s.id 
+                    ? 'bg-blue-600 text-white shadow-[0_0_20px_rgba(37,99,235,0.5)] scale-110' 
+                    : 'bg-slate-800 text-slate-500'
+                }`}>
                   {s.icon}
                 </div>
-                <div>
-                  <h4 className={`font-bold ${step >= s.id ? 'text-white' : 'text-slate-500'}`}>{s.label}</h4>
-                  {step === s.id && (
-                    <motion.p 
-                      initial={{ height: 0 }} 
-                      animate={{ height: "auto" }}
-                      className="text-xs text-blue-300 mt-1 leading-relaxed"
-                    >
-                      {s.detail}
-                    </motion.p>
-                  )}
+                <div className="flex-1">
+                  <h3 className={`font-bold text-sm ${step >= s.id ? 'text-white' : 'text-slate-500'}`}>
+                    {s.label}
+                  </h3>
+                  <AnimatePresence>
+                    {step === s.id && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <p className="text-xs text-slate-400 mt-1 font-light leading-relaxed">
+                          {s.detail}
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
+                {step > s.id && (
+                   <CheckCircle2 size={16} className="text-green-500 mt-1" />
+                )}
               </motion.div>
             ))}
           </div>
-        </div>
+        </main>
 
-        {/* Truck Animation (Only visible during transport) */}
+        {/* אנימציית משאית בתנועה - מופיעה רק בשלב הנסיעה */}
         <AnimatePresence>
           {step === 3 && (
+            <div className="relative h-20 w-full overflow-hidden mb-6 flex items-center">
+              <motion.div 
+                initial={{ x: "120%" }}
+                animate={{ x: "-120%" }}
+                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                className="text-5xl drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]"
+              >
+                🚛💨
+              </motion.div>
+              <div className="absolute bottom-4 w-full h-[1px] bg-gradient-to-r from-transparent via-slate-700 to-transparent" />
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* פירוט כספי שקוף */}
+        <div className="bg-slate-900/40 rounded-3xl p-6 border border-white/5 mb-6">
+          <h4 className="text-[10px] uppercase tracking-widest text-slate-500 mb-4 font-bold">פירוט חשבון שקוף 💎</h4>
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400 font-light">מחיר בסיס (טייבה - תל אביב)</span>
+              <span className="font-mono">₪{orderData.basePrice}</span>
+            </div>
+            {orderData.extras.map((ex, i) => (
+              <div key={i} className="flex justify-between text-sm">
+                <span className="text-slate-400 font-light">{ex.label}</span>
+                <span className="text-blue-400 font-mono">+₪{ex.amount}</span>
+              </div>
+            ))}
+            <div className="h-[1px] bg-slate-800 my-2" />
+            <div className="flex justify-between items-center">
+              <span className="text-white font-bold">סה"כ לתשלום</span>
+              <span className="text-2xl font-black text-green-400 font-mono">₪{orderData.total}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* כפתורי פעולה */}
+        <div className="grid grid-cols-2 gap-4">
+          <button 
+            onClick={() => window.location.href = "tel:050000000"}
+            className="flex flex-col items-center justify-center gap-2 p-5 rounded-[2rem] bg-white text-black hover:bg-slate-200 transition-all active:scale-95 shadow-xl"
+          >
+            <Phone size={20} fill="currentColor" />
+            <span className="text-xs font-black">דבר עם אבו ראסם</span>
+          </button>
+          
+          <div className="flex flex-col items-center justify-center p-5 rounded-[2rem] bg-blue-600/20 border border-blue-500/30">
+            <span className="text-[10px] text-blue-400 mb-1">מעבר הדירה הבא?</span>
+            <span className="text-xs font-bold text-white italic">"תעיר אותי משינה"</span>
+          </div>
+        </div>
+
+        {/* סיום ודירוג - מופיע רק בשלב 5 */}
+        <AnimatePresence>
+          {step === 5 && (
             <motion.div 
-              initial={{ x: "100%" }}
-              animate={{ x: "-100%" }}
-              transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-              className="text-6xl my-10"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="mt-8 bg-gradient-to-br from-green-600 to-emerald-700 p-8 rounded-[3rem] text-center shadow-[0_20px_40px_rgba(5,150,105,0.3)]"
             >
-              🚛💨
+              <h2 className="text-2xl font-black mb-2">הובלה הושלמה! 🎉 😍</h2>
+              <p className="text-sm text-green-100 mb-6 font-light">ראמי ידידי, תתחדשו בבית החדש בתל אביב!</p>
+              
+              <div className="flex justify-center gap-2 mb-8 bg-black/10 p-4 rounded-2xl">
+                {[1,2,3,4,5].map(i => <Star key={i} size={28} className="text-yellow-400 fill-yellow-400 drop-shadow-md cursor-pointer" />)}
+              </div>
+
+              <p className="text-[9px] text-green-200 opacity-60 leading-tight italic">
+                הפרטים והציוד שלך מאוחסנים במערכת SabanOS. <br />
+                אנחנו תמיד כאן בשבילך להובלה הבאה.
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Billing & Call Section */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="bg-slate-900/80 p-6 rounded-[2rem] border border-white/5 text-center">
-            <p className="text-slate-500 text-xs">סה"כ לתשלום</p>
-            <p className="text-3xl font-black text-green-400">₪{totalWeightPrice}</p>
-          </div>
-          
-          <button 
-            onClick={() => window.location.href = "tel:050000000"}
-            className="bg-white text-black p-6 rounded-[2rem] font-bold flex flex-col items-center justify-center hover:bg-slate-200 transition-all"
-          >
-            <Phone size={24} className="mb-1" />
-            <span>דבר עם אבו ראסם</span>
-          </button>
-        </div>
-
-        {/* Final Step: Feedback */}
-        {step === 5 && (
-          <motion.div 
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="mt-8 bg-gradient-to-r from-green-600 to-emerald-600 p-8 rounded-[2.5rem] text-center shadow-2xl shadow-green-900/20"
-          >
-            <h2 className="text-2xl font-bold mb-2">תתחדשו בבית החדש! 😍</h2>
-            <p className="text-sm text-green-100 mb-6">איך הייתה ההובלה של אבו ראסם?</p>
-            <div className="flex justify-center gap-2 mb-6">
-              {[1, 2, 3, 4, 5].map(star => <Star key={star} className="fill-yellow-300 text-yellow-300" />)}
-            </div>
-            <p className="text-[10px] opacity-70">הפרטים שלך נשמרו במערכת SabanOS למעבר הבא שלך 🔒</p>
-          </motion.div>
-        )}
-
-        {/* Control Button (For Demo Purposes) */}
+        {/* כפתור שליטה לטסטים - למחוק לפני פריסה */}
         <button 
           onClick={() => setStep(s => s < 5 ? s + 1 : 1)}
-          className="mt-10 mx-auto block text-slate-600 text-[10px] hover:text-white"
+          className="w-full mt-10 py-2 text-[8px] text-slate-700 hover:text-slate-500 font-mono uppercase tracking-widest"
         >
-          סימולציית שלב הבא (לצרכי בדיקה בלבד)
+          Dev Mode: Next Step Simulate
         </button>
       </div>
     </div>
