@@ -1,27 +1,26 @@
 import { google } from "@ai-sdk/google";
 import { streamText } from "ai";
-import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
 import { buildSystemPrompt } from "@/lib/ai-training";
+// שים לב: כאן אין צורך בייבוא של פונקציות שלא קיימות
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
-  const { messages, trialId } = await req.json();
+  try {
+    const { messages, trialId } = await req.json();
 
-  // 1. שליפת נתוני העסק הספציפיים (אבו ראסם) מה-Firebase
-  const businessDoc = await getDoc(doc(db, "trials", trialId));
-  const businessData = businessDoc.exists() ? businessDoc.data() : null;
+    // בניית הפרומפט מהמוח שעדכנו ב-lib
+    const systemPrompt = buildSystemPrompt({ businessName: "הובלות אבו אל ראסם" });
 
-  // 2. בניית ה-System Prompt עם "המוח המעודכן" וה-JSON של המחירון
-  const systemPrompt = buildSystemPrompt(businessData);
+    const result = await streamText({
+      model: google("gemini-1.5-flash"),
+      system: systemPrompt,
+      messages,
+    });
 
-  // 3. הפעלת ג'ימני עם לוגיקת המחירון המשולבת
-  const result = await streamText({
-    model: google("gemini-1.5-flash"),
-    system: systemPrompt,
-    messages,
-  });
-
-  return result.toDataStreamResponse();
+    return result.toDataStreamResponse();
+  } catch (error) {
+    console.error("Chat API Error:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
+  }
 }
