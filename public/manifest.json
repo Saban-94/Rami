@@ -1,39 +1,22 @@
 {
-  "name": "SabanOS | Business AI",
+  "name": "SabanOS Business Management",
   "short_name": "SabanOS",
-  "description": "מערכת ניהול חכמה מבוססת AI לוואטסאפ",
+  "description": "AI-Powered Logistics & Business Automation System",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
+  "background_color": "#020510",
+  "theme_color": "#3B82F6",
   "orientation": "portrait",
-  "background_color": "#020617",
-  "theme_color": "#22c55e",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/5968/5968841.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/5968/5968841.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/5968/5968841.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "קביעת תור דמו",
-      "short_name": "דמו",
-      "url": "/trial",
-      "description": "התנסות במערכת SabanOS",
-      "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3652/3652191.png", "sizes": "192x192" }]
     }
   ]
 }
