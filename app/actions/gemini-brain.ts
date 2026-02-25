@@ -4,50 +4,54 @@ import { GoogleGenAI } from "@google/genai";
 
 export async function processBusinessRequest(message: string, history: any[], businessContext: any) {
   const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) return "❌ חסר API KEY בשרת.";
+  if (!apiKey) return "❌ חסרה הגדרת מפתח בשרת";
 
   try {
-    // אתחול הלקוח - ה-SDK החדש יודע לנתב לבד
     const ai = new GoogleGenAI({ apiKey });
-    
-    // תיקון המודל: ב-2026 משתמשים בשמות הנקיים או ב-Gemini 3 Flash
-    // אם gemini-1.5-flash לא נמצא, אנחנו עוברים ל-gemini-3-flash-preview
     const modelId = "gemini-3-flash-preview"; 
 
+    // שליפת שם הלקוח מההיסטוריה כדי ליצור שייכות
+    const userName = history.find(h => h.role === "user" && h.content.includes("שמי הוא")) 
+                     || history.find(h => h.role === "user" && h.parts?.[0]?.text?.length < 10); 
+    
+    const nameToUse = businessContext?.customerName || "חבר";
+
+    const systemPrompt = `
+      שם העסק: ${businessContext.businessName || 'הובלות אבו אל ראסם'} 🚛
+      מחירון והנחיות: ${businessContext.pricingRules || 'שירות אדיב ומקצועי'}
+      
+      פרוטוקול שיחה (חשוב מאוד):
+      1. אל תשתמש בכוכביות (**) להדגשה. אם תרצה להדגיש, השתמש באימוג'י מתאים לפני המילה.
+      2. ברגע שהלקוח אומר את שמו, השתמש בשם שלו בכל משפט שני כדי ליצור תחושת שייכות וביטחון.
+      3. טון דיבור: חם, אנושי, אחראי, ומקצועי מאוד.
+      4. תסריט: ברך את הלקוח, שאל מה הציוד להובלה, מאיזו קומה, והאם יש מעלית.
+      5. בסוף, בקש טלפון כדי ש${businessContext.businessName} יחזור אליו לסגירה.
+    `;
+
     const cleanHistory = (history || [])
-      .slice(-6)
+      .slice(-10)
       .map(h => ({
         role: h.role === "user" ? "user" : "model",
         parts: [{ text: String(h.content || "") }]
-      }))
-      .filter(h => h.parts[0].text.trim() !== "");
-
-    if (cleanHistory.length > 0 && cleanHistory[0].role === "model") {
-      cleanHistory.shift();
-    }
+      }));
 
     const result = await ai.models.generateContent({
-      model: modelId, // כאן השתנה השם
+      model: modelId,
       contents: [
         ...cleanHistory,
-        { role: "user", parts: [{ text: message }] }
+        { role: "user", parts: [{ text: `${systemPrompt}\n\nהודעת לקוח: ${message}` }] }
       ],
       config: {
-        systemInstruction: `אתה עוזר של ${businessContext?.businessName || 'אבו אל ראסם'}.`,
+        temperature: 0.8, // הופך את התשובה לאנושית יותר
+        topP: 0.95,
       }
     });
 
-    return result.text;
+    // ניקוי כוכביות שאולי ה-AI בכל זאת הוסיף
+    return result.text.replace(/\*\*/g, "");
 
   } catch (error: any) {
-    console.error("Gemini Error:", error.message);
-    
-    // מלשינון fallback - אם גם זה נכשל, ננסה את השם הישיר
-    if (error.message.includes("404")) {
-        return "❌ שגיאה 404: המודל gemini-3-flash-preview לא זוהה. נסה לעדכן ל-gemini-2.0-flash-exp כברירת מחדל.";
-    }
-    
-    return `❌ שגיאה: ${error.message}`;
+    console.error("Brain Error:", error);
+    return "מצטער, יש לי עומס קטן. תכתוב לי שוב עוד רגע? 🛠️";
   }
 }
