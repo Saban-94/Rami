@@ -1,54 +1,44 @@
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Truck, Package, User, MapPin, CheckCircle } from 'lucide-react';
+<script>
+    // פונקציה לטעינה ראשונית בטוחה
+    function initApp() {
+        console.log("SabanOS Initializing...");
+        
+        // טיימר הגנה - אם לא נטען תוך 7 שניות, שחרר את המסך
+        const timeout = setTimeout(() => {
+            document.getElementById('loadingOverlay')?.remove();
+            addMessage("אח, יש עיכוב בתקשורת עם המוח. נסה לרענן.", 'ai');
+        }, 7000);
 
-const OrderManagerInterface = ({ orders }) => {
-  return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-screen font-sans">
-      <header className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
-        <h1 className="text-2xl font-bold text-gray-800">SabanOS - ניהול סידור בוקר</h1>
-        <div className="flex gap-4">
-          <Badge variant="outline" className="text-blue-600">פעילים: {orders.filter(o => o.status === 'בדרך').length}</Badge>
-          <Badge variant="outline" className="text-green-600">סופקו: {orders.filter(o => o.status === 'סופקה (✅)').length}</Badge>
-        </div>
-      </header>
+        google.script.run
+            .withSuccessHandler(logs => {
+                clearTimeout(timeout);
+                document.getElementById('loadingOverlay')?.remove(); // הסרת הדיליי
+                logs.forEach(log => addMalshinonItem(log));
+            })
+            .withFailureHandler(err => {
+                clearTimeout(timeout);
+                console.error(err);
+                addMessage("שגיאה בחיבור ל-Apps Script. בדוק הרשאות.", 'ai');
+            })
+            .getRecentLogs();
+    }
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {orders.map((order, idx) => (
-          <Card key={idx} className="hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">הזמנה #{order.orderId}</CardTitle>
-              <Badge className={order.status === 'סופקה (✅)' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
-                {order.status}
-              </Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-semibold">{order.driver}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm">{order.customer}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">{order.destination}</span>
-                </div>
-                {order.trackingLink && (
-                  <a href={order.trackingLink} className="text-xs text-blue-500 underline block mt-2">
-                    עקוב ב-Waze
-                  </a>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
+    window.onload = initApp;
+</script>
+```
 
-export default OrderManagerInterface;
+### 3. בדיקת ה-API Key ב-`code.gs`
+אם ה-API Key של Gemini לא תקין או ריק, הפונקציה `callGemini` קורסת והדף נתקע.
+* פתח את `code.gs`.
+* וודא שהמשתנה `API_KEY` מכיל את המפתח הארוך שהוצאת מ-AI Studio.
+* בדוק שאין שגיאות ב-**Executions** (בסרגל הצד ב-Apps Script) – אם אתה רואה שם אדום, לחץ עליו כדי לראות את סיבת הקריסה.
+
+### 4. פונקציית ה-`doGet` (וודא שהיא נראית ככה)
+כדי שהדף יעלה חלק במובייל בלי חסימות של גוגל:
+```javascript
+function doGet() {
+  return HtmlService.createHtmlOutputFromFile('index')
+    .setTitle('SabanOS | שליטה מלאה')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL) // קריטי ללחיצות
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+}
